@@ -21,9 +21,10 @@ class Server {
 
 		Server& operator=(const Server& other);
 
-        void addUser(User& new_user);
-        void printUser();
+        // void addUser(User& new_user);
+        // void printUser();
         void listen();
+        void setNonBlocking(int sock);
 
 	private:
         std::string _name;
@@ -35,6 +36,7 @@ class Server {
         int _server_fd;
         int _opt;
         int _server_socket;
+        void _constructorFds();
 };
 
 #endif
