@@ -15,25 +15,23 @@
 #include "user.hpp"
 
 int main(int ac, char **av) {
-
     if (ac != 3) {
         std::cerr << "Usage: ./ircserv <port> <password>\n";
         return 1;
     }
+
     Server server(av);
 
-    User userTest1("test1");
-    server.addUser(userTest1);
-
-    server.printUser();
-
-    while (true) {
-        ;// server_running
+    try {
+        server.listen();
     }
-    
-    // fin de processus, liberer les port etc
+    catch (const std::runtime_error& e) {
+        std::cerr << "Exception caught: " << e.what() << '\n';
+        return 1;
+    }
     return 0;
 }
+
 
 
 /*int main(int argc, char *argv[]) {

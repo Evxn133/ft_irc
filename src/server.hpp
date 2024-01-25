@@ -23,15 +23,18 @@ class Server {
 
         void addUser(User& new_user);
         void printUser();
+        void listen();
 
 	private:
         std::string _name;
 		int _nb_user;
         std::string _password;
         int _port;
-        User *_users;
+        User _user;
+        int _client_fds;
         int _server_fd;
         int _opt;
+        int _server_socket;
 };
 
 #endif
