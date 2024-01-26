@@ -153,18 +153,4 @@ if (channel[user_id] == 3)
 else
 	error*/
 
-// 
-
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
-// test
+//
