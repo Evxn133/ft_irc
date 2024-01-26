@@ -45,4 +45,17 @@ define print_progress
 	@echo "\033[A" 
 endef
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re git
+
+git: git-add git-commit git-push
+
+git-add:
+	@git add .
+
+git-commit:
+	@echo "Entrez votre message de commit : "
+	@read MESSAGE; \
+	git commit -m "$$MESSAGE"
+
+git-push:
+	@git push origin master
