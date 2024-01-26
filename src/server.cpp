@@ -128,12 +128,12 @@ void Server::_constructorFds() {
 	// La structure `fds` peut être un membre de votre classe `Server` si vous souhaitez y accéder ailleurs
 }
 
-void	Server::_wait_connection(void) {
-	int pl = poll(this->_clients_fds, this->_clients.size() + 1, - 1)
+// void	Server::_wait_connection(void) {
+// 	int pl = poll(this->_clients_fds, this->_clients.size() + 1, - 1)
 
-	if (rc < 0 ) // si poll renvoie -1, cela veut dire qu'il ne peut lire le socket.
-		std::cout << "Irc server error: Can't read socket activity..." << std::endl;
+// 	if (rc < 0 ) // si poll renvoie -1, cela veut dire qu'il ne peut lire le socket.
+// 		std::cout << "Irc server error: Can't read socket activity..." << std::endl;
 
-	for (i = 0; i < this->_client.size() + 1; i++)
+// 	for (i = 0; i < this->_client.size() + 1; i++)
 
-}
+// }
