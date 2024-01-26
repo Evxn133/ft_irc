@@ -135,5 +135,5 @@ void	Server::_wait_connection(void) {
 		std::cout << "Irc server error: Can't read socket activity..." << std::endl;
 
 	for (i = 0; i < this->_client.size() + 1; i++)
-	
+	dd
 }
