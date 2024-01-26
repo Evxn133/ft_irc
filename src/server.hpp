@@ -31,7 +31,8 @@ class Server {
 		int _nb_user;
         std::string _password;
         int _port;
-        User _user;
+        std::vector <User *> _user;
+        // std::vector <Channel *> _channel;
         int _client_fds;
         int _server_fd;
         int _opt;
