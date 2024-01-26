@@ -45,8 +45,6 @@ define print_progress
 	@echo "\033[A" 
 endef
 
-.PHONY: all clean fclean re git
-
 git: git-add git-commit git-push
 
 git-add:
@@ -59,3 +57,5 @@ git-commit:
 
 git-push:
 	@git push git@github.com:evxn13/ft_irc.git
+
+.PHONY: all clean fclean re git
