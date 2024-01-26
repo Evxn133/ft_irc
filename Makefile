@@ -58,4 +58,4 @@ git-commit:
 	git commit -m "$$MESSAGE"
 
 git-push:
-	@git push origin master
+	@git push git@github.com:evxn13/ft_irc.git
