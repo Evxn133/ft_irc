@@ -13,7 +13,7 @@ Server::Server(char **av) {
 	_nb_user = 0;
 	_password = av[2];
 	_port = std::atoi(av[1]);
-	_client_fds = 0;
+	_client_fds.clear();
 	_server_socket = 0;
 	std::cout << "server '" << _name << "' created" << std::endl << std::endl;
 }
@@ -94,12 +94,10 @@ void Server::listen(void) {
 	if (::listen(this->_server_socket, 32) < 0)
 		throw std::runtime_error("Error: Can't listen socket.");
 
-	this->_constructorFds();
+	this->_constructFds();
 	std::cout << "Waiting connection..." << std::endl;
 	while (1)
-	{
-		// this->_wait_connection();
-	}
+		this->_wait_connection();
 }
 
 
@@ -113,27 +111,75 @@ void Server::setNonBlocking(int sock) {
 	}
 }
 
-void Server::_constructorFds() {
-	// Initialiser les variables ou structures nécessaires pour votre serveur
-	this->_client_fds = -1; // Supposons que c'est un identifiant de descripteur de fichier pour le dernier client accepté
+void Server::_constructFds(void) {
+    // Remplacez 'this->_clients' par 'this->_user'
+    std::vector<struct pollfd> temp_clients_fds(this->_user.size() + 1);
 
-	// Si vous utilisez `poll` ou `select`, vous pouvez initialiser des structures `pollfd` ou des ensembles `fd_set` ici
-	// Exemple pour `poll`:
-	std::vector<struct pollfd> fds;
-	struct pollfd server_fd_data;
-	server_fd_data.fd = this->_server_socket;  // Le socket du serveur
-	server_fd_data.events = POLLIN;            // On attend des données en lecture (des connexions entrantes)
-	fds.push_back(server_fd_data);
+    temp_clients_fds[0].fd = this->_server_socket;
+    temp_clients_fds[0].events = POLLIN;
 
-	// La structure `fds` peut être un membre de votre classe `Server` si vous souhaitez y accéder ailleurs
+    for (unsigned long i = 0; i < this->_user.size(); i++) {
+        // Assurez-vous que la classe User a une méthode getFD()
+        temp_clients_fds[i + 1].fd = this->_user[i]->getFD();
+        temp_clients_fds[i + 1].events = POLLIN;
+    }
+
+    // Échanger notre vector temporaire avec le membre _client_fds
+    std::swap(this->_client_fds, temp_clients_fds);
 }
 
-// void	Server::_wait_connection(void) {
-// 	int pl = poll(this->_clients_fds, this->_clients.size() + 1, - 1)
+void Server::_wait_connection(void) {
+    int pl = poll(this->_client_fds.data(), this->_client_fds.size(), -1);
 
-// 	if (rc < 0 ) // si poll renvoie -1, cela veut dire qu'il ne peut lire le socket.
-// 		std::cout << "Irc server error: Can't read socket activity..." << std::endl;
+    if (pl < 0) {  // si poll renvoie -1, cela veut dire qu'il ne peut lire le socket.
+        std::cout << "Irc server error: Can't read socket activity..." << std::endl;
+        return; // Ajout d'un return pour arrêter l'exécution en cas d'erreur.
+    }
 
-// 	for (i = 0; i < this->_client.size() + 1; i++)
+    for (size_t i = 0; i < this->_client_fds.size(); i++) {
+        if (this->_client_fds[i].revents & POLLIN) {
+            if (this->_client_fds[i].fd == this->_server_socket) {
+                this->acceptNewConnections();
+            }
+			else {
+                User *user = this->_user[i - 1];
+                // this->_receivedata(client);
+            }
+        }
+    }
+}
 
-// }
+void Server::acceptNewConnections() {
+    int newSocketFD;
+    struct sockaddr_in6 clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
+
+    while (true) {
+        newSocketFD = accept(this->_server_socket, (struct sockaddr*)&clientAddr, &clientAddrLen);
+        
+        // Vérifier si l'acceptation a échoué
+        if (newSocketFD < 0) {
+            // Sortir de la boucle si on ne peut pas accepter de nouvelles connexions
+            if (errno != EWOULDBLOCK) {
+                std::cerr << "Error: Unable to accept new connection." << std::endl;
+            }
+            break;
+        }
+        
+        // Ajouter la nouvelle connexion à la gestion des utilisateurs
+        handleNewUser(newSocketFD, clientAddr); // Vous devez implémenter cette fonction selon votre logique de gestion des utilisateurs
+        std::cout << "New client connected." << std::endl;
+    }
+}
+
+void Server::handleNewUser(int socketFD, const sockaddr_in6& clientAddr) {
+    // Définir le socket comme non bloquant
+    setNonBlocking(socketFD);
+
+    // Ajouter le nouvel utilisateur à la liste des utilisateurs gérés par le serveur
+    // Par exemple: this->_user.push_back(new User(socketFD, ...));
+    // ...
+    
+    // Mettre à jour la liste des descripteurs de fichier pour poll
+    _constructFds();
+}

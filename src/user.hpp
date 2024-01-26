@@ -14,10 +14,11 @@ class User {
 
         std::string getNickName();
         int getId();
-
+		int getFD() const;
 	private:
         std::string _nick_name;
         int _id;
+		int	_fd;
 };
 
 #endif 

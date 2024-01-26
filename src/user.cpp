@@ -3,13 +3,15 @@
 // constructor
 
 User::User(void) {
-	_nick_name = "name";
+    _nick_name = "name";
     _id = -1;
+    _fd = -1;
 }
 
 User::User(std::string name) {
-	_nick_name = name;
+    _nick_name = name;
     _id = 12;
+    _fd = -1;
 }
 
 User::User(const User& other) {
@@ -39,4 +41,8 @@ std::string User::getNickName() {
 
 int User::getId() {
     return _id;
+}
+
+int User::getFD() const {
+    return this->_fd;  // Utilisez le nom réel de votre variable membre
 }
