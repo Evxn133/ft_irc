@@ -26,6 +26,11 @@ User::~User(void) {
 
 // operator
 
+User::User(int fd) : _fd(fd) {
+    _nick_name = "default";
+    _id = -1;
+}
+
 User &User::operator=(const User& other) {
     _nick_name = other._nick_name;
     _id = other._id;

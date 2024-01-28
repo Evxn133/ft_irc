@@ -11,8 +11,10 @@
 #include <poll.h>
 #include <algorithm>
 #include <sstream>
+#include <iterator>
 
 #include "user.hpp"
+#include "channel.hpp"
 
 #define BUFFER_SIZE 1024  // Ajustez la taille selon vos besoins
 
@@ -37,8 +39,12 @@ class Server {
         void removeUser(int userFD);
         std::vector<std::string> splitCommands(const std::string& data, char delimiter);
         void processCommand(const std::string& cmd, User* user);
+        void sendMessage(int clientFD, const std::string& message);
+        User* getUserByNickName(const std::string& nickName);
+        Channel* getChannelByName(const std::string& channelName);
 
     private:
+        std::string _nick_name;
         std::string _name;
         int _nb_user;
         std::string _password;
@@ -50,6 +56,7 @@ class Server {
         int _opt;
         int _server_socket;
         void _wait_connection(void);
+        std::vector<Channel*> _channels;
 };
 
 

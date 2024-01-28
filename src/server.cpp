@@ -133,23 +133,30 @@ void Server::_constructFds(void) {
 void Server::_wait_connection(void) {
     int pl = poll(this->_client_fds.data(), this->_client_fds.size(), -1);
 
-    if (pl < 0) {  // si poll renvoie -1, cela veut dire qu'il ne peut lire le socket.
-        std::cout << "Irc server error: Can't read socket activity..." << std::endl;
-        return; // Ajout d'un return pour arrêter l'exécution en cas d'erreur.
+    if (pl < 0) {
+        std::cout << "Irc server error: Can't read socket activity, error: " << strerror(errno) << std::endl;
+        return;
     }
 
     for (size_t i = 0; i < this->_client_fds.size(); i++) {
         if (this->_client_fds[i].revents & POLLIN) {
             if (this->_client_fds[i].fd == this->_server_socket) {
+                std::cout << "New connection on server socket" << std::endl;
                 this->acceptNewConnections();
-            }
-			else {
-                User *user = this->_user[i - 1];
-                // this->_receivedata(client);
+            } else {
+                // Vérifier que l'index de l'utilisateur est valide
+                size_t userIndex = i - 1;
+                if (userIndex < this->_user.size()) {
+                    User *user = this->_user[userIndex];
+                    this->processClientInput(user);  // Traitement des données entrantes pour l'utilisateur
+                } else {
+                    std::cerr << "Invalid user index: " << userIndex << std::endl;
+                }
             }
         }
     }
 }
+
 
 void Server::acceptNewConnections() {
     int newSocketFD;
@@ -159,31 +166,53 @@ void Server::acceptNewConnections() {
     while (true) {
         newSocketFD = accept(this->_server_socket, (struct sockaddr*)&clientAddr, &clientAddrLen);
         
-        // Vérifier si l'acceptation a échoué
         if (newSocketFD < 0) {
-            // Sortir de la boucle si on ne peut pas accepter de nouvelles connexions
-            if (errno != EWOULDBLOCK) {
-                std::cerr << "Error: Unable to accept new connection." << std::endl;
-            }
+            // ... gestion des erreurs ...
             break;
         }
         
         // Ajouter la nouvelle connexion à la gestion des utilisateurs
-        handleNewUser(newSocketFD, clientAddr); // Vous devez implémenter cette fonction selon votre logique de gestion des utilisateurs
-        std::cout << "New client connected." << std::endl;
+        handleNewUser(newSocketFD, clientAddr);
+        _constructFds(); // Recréer le tableau _client_fds pour inclure le nouveau client
     }
 }
 
 void Server::handleNewUser(int socketFD, const sockaddr_in6& clientAddr) {
-    // Définir le socket comme non bloquant
-    setNonBlocking(socketFD);
-
-    // Ajouter le nouvel utilisateur à la liste des utilisateurs gérés par le serveur
-    // Par exemple: this->_user.push_back(new User(socketFD, ...));
-    // ...
+    std::vector<std::string> welcomeMessageLines = {
+        "Bienvenue sur :",
+        ".",
+        ".",
+        ".##.....##.####.########.########...........######.",
+        ".##.....##..##..##.......##.....##.........##....##",
+        ".##.....##..##..##.......##.....##.........##......",
+        ".#########..##..######...########..........##......",
+        ".##.....##..##..##.......##...##...........##......",
+        ".##.....##..##..##.......##....##..........##....##",
+        ".##.....##.####.########.##.....##.#######..######.",
+        ".",
+        "."
+    };
+    User* newUser = new User(socketFD);
+    this->_user.push_back(newUser);
     
-    // Mettre à jour la liste des descripteurs de fichier pour poll
-    _constructFds();
+    // Envoyer le message de bienvenue
+    for (const auto& line : welcomeMessageLines) {
+        std::string messageToSend = "\033[31m" + line + "\033[0m\n";
+        sendMessage(socketFD, messageToSend);
+    }
+}
+
+
+void Server::sendMessage(int clientFD, const std::string& message) {
+    // Envoyer le message au client spécifié par clientFD
+    ssize_t bytesSent = send(clientFD, message.c_str(), message.length(), 0);
+    if (bytesSent < 0) {
+        // Gérer l'erreur d'envoi
+        std::cerr << "Error: Unable to send message to fd " << clientFD << std::endl;
+    } else if (bytesSent < static_cast<ssize_t>(message.length())) {
+        // Gérer le cas où le message n'a pas été complètement envoyé
+        std::cerr << "Warning: Partial message sent to fd " << clientFD << std::endl;
+    }
 }
 
 void Server::processClientInput(User* user) {
@@ -250,7 +279,64 @@ std::vector<std::string> Server::splitCommands(const std::string& data, char del
 }
 
 void Server::processCommand(const std::string& cmd, User* user) {
-    // Traitez la commande ici. La logique dépend de votre protocole/application.
-    std::cout << "Command received from user " << user->getFD() << ": " << cmd << std::endl;
-    // ... implémentez votre logique de traitement des commandes ...
+    // Découper la commande en mots
+    std::istringstream iss(cmd);
+    std::vector<std::string> words{std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
+
+    if (words.empty()) {
+        return;
+    }
+    std::cout << "coucou" << std::endl;
+    // Traiter les commandes
+    if (words[0] == "NICK" && words.size() > 1) {
+        // La commande est NICK, le client souhaite changer de surnom
+        std::string newNick = words[1];
+        user->setNickName(newNick);  // Assurez-vous que vous avez une méthode pour changer le surnom de l'utilisateur
+        std::string ack = "Votre nouveau nick est " + newNick + "\n";
+        std::cout << "Nouveau client avec comme nick : " << newNick << std::endl;
+        sendMessage(user->getFD(), ack);
+    }
+    else if (words[0] == "MSG" && words.size() > 2) {
+        std::string dest = words[1];
+        std::string messageContent = cmd.substr(cmd.find(' ', cmd.find(' ') + 1) + 1);
+        // Vérifiez si dest est un utilisateur
+        User* destUser = getUserByNickName(dest);
+        if (destUser) {
+            sendMessage(destUser->getFD(), "Message de " + user->getNickName() + ": " + messageContent);
+        } else {
+            // Vérifiez si dest est un canal
+            Channel* destChannel = getChannelByName(dest);
+            if (destChannel) {
+                // Envoyer le message à tous les membres du canal
+                for (User* member : destChannel->getMembers()) {
+                    sendMessage(member->getFD(), "Message dans " + dest + " de " + user->getNickName() + ": " + messageContent);
+                }
+            } else {
+                sendMessage(user->getFD(), "Destination inconnue: " + dest);
+            }
+        }
+    }
+}
+
+
+void User::setNickName(const std::string& nickName) {
+    _nick_name = nickName;
+}
+
+User* Server::getUserByNickName(const std::string& nickName) {
+    for (User* user : this->_user) {
+        if (user->getNickName() == nickName) {
+            return user;
+        }
+    }
+    return nullptr; // Retourne nullptr si aucun utilisateur avec ce surnom n'est trouvé
+}
+
+Channel* Server::getChannelByName(const std::string& channelName) {
+    for (Channel* channel : this->_channels) {
+        if (channel->getName() == channelName) {
+            return channel;
+        }
+    }
+    return nullptr;
 }

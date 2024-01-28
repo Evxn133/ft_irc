@@ -20,12 +20,15 @@ class User {
 		User(std::string name);
 		User(const User& other);
 		~User(void);
+		User(int fd);
 
 		User& operator=(const User& other);
 
         std::string getNickName();
         int getId();
 		int getFD() const;
+        void setNickName(const std::string& nickName);
+
 	private:
         std::string _nick_name;
         int _id;
