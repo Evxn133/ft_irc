@@ -10,8 +10,11 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <algorithm>
+#include <sstream>
 
 #include "user.hpp"
+
+#define BUFFER_SIZE 1024  // Ajustez la taille selon vos besoins
 
 class Server {
     public:
@@ -29,6 +32,11 @@ class Server {
         int getFD() const;
         void handleNewUser(int socketFD, const sockaddr_in6& clientAddr);
         void acceptNewConnections();
+        void handleCompleteMessages(User* user, const std::string& data);
+        void processClientInput(User* user);
+        void removeUser(int userFD);
+        std::vector<std::string> splitCommands(const std::string& data, char delimiter);
+        void processCommand(const std::string& cmd, User* user);
 
     private:
         std::string _name;

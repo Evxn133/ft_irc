@@ -2,6 +2,8 @@
 
 // constructor
 
+#define DEBUG 1  // Mettre à 0 pour désactiver l'impression de débogage
+
 Server::Server(char **av) {
 	_server_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (_server_fd < 0) {
@@ -182,4 +184,73 @@ void Server::handleNewUser(int socketFD, const sockaddr_in6& clientAddr) {
     
     // Mettre à jour la liste des descripteurs de fichier pour poll
     _constructFds();
+}
+
+void Server::processClientInput(User* user) {
+    char dataBuffer[BUFFER_SIZE + 1];
+
+    while (true) {
+        int receivedBytes = recv(user->getFD(), dataBuffer, sizeof(dataBuffer) - 1, 0);
+
+        if (receivedBytes < 0) {
+            if (errno != EWOULDBLOCK) {
+                std::cerr << "Error receiving data from fd " << user->getFD() << std::endl;
+                removeUser(user->getFD());
+            }
+            break;
+        } else if (receivedBytes == 0) {
+            removeUser(user->getFD());
+            break;
+        } else {
+            dataBuffer[receivedBytes] = '\0';
+            std::string receivedData = dataBuffer;
+
+            if (receivedData.back() == '\n') {
+                handleCompleteMessages(user, receivedData);
+            } else {
+                user->appendToRecvBuffer(receivedData);
+                if (DEBUG) {
+                    std::cout << "Received partial data from fd " << user->getFD() << ": " << receivedData << std::endl;
+                }
+            }
+        }
+    }
+}
+
+void Server::handleCompleteMessages(User* user, const std::string& data) {
+    std::vector<std::string> commands = splitCommands(user->getRecvBuffer() + data, '\n');
+    user->clearRecvBuffer();
+    
+    for (const auto& cmd : commands) {
+        processCommand(cmd, user);
+    }
+}
+
+void Server::removeUser(int userFD) {
+    // Trouvez et supprimez l'utilisateur ayant le file descriptor userFD
+    for (auto it = _user.begin(); it != _user.end(); ++it) {
+        if ((*it)->getFD() == userFD) {
+            delete *it;  // Libérez la mémoire si vous avez alloué dynamiquement l'utilisateur
+            _user.erase(it);  // Supprimez l'utilisateur de la liste
+            break;
+        }
+    }
+}
+
+std::vector<std::string> Server::splitCommands(const std::string& data, char delimiter) {
+    std::vector<std::string> commands;
+    std::string command;
+    std::istringstream stream(data);
+
+    while (std::getline(stream, command, delimiter)) {
+        commands.push_back(command);
+    }
+
+    return commands;
+}
+
+void Server::processCommand(const std::string& cmd, User* user) {
+    // Traitez la commande ici. La logique dépend de votre protocole/application.
+    std::cout << "Command received from user " << user->getFD() << ": " << cmd << std::endl;
+    // ... implémentez votre logique de traitement des commandes ...
 }

@@ -5,6 +5,17 @@
 
 class User {
 	public:
+    	void appendToRecvBuffer(const std::string& data) {
+    	    _recvBuffer += data;
+    	}
+
+    	std::string getRecvBuffer() const {
+    	    return _recvBuffer;
+    	}
+
+    	void clearRecvBuffer() {
+    	    _recvBuffer.clear();
+    	}
 		User(void);
 		User(std::string name);
 		User(const User& other);
@@ -19,6 +30,7 @@ class User {
         std::string _nick_name;
         int _id;
 		int	_fd;
+		std::string _recvBuffer;
 };
 
 #endif 
