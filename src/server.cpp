@@ -21,34 +21,39 @@ using namespace std;
 #define BOLD_CYAN "\033[1m\033[36m"       /* Bold Cyan */
 #define BOLD_WHITE "\033[1m\033[37m"      /* Bold White */
 
-Server::Server(int port, string password) : _port(port), _password(password)
-{
+// constructor
+
+Server::Server(int port, string password) : _port(port), _password(password) {
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Port = " << port << "." << endl;
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Password = ";
     for (int i = 0; i < size(password); i++) cout << "*";
     cout << "." << endl;
 }
 
-Server::~Server()
-{
+// destructor
+
+Server::~Server() {
 
 }
 
-void    Server::Cold_Start(void)
-{
+// other
+
+void    Server::Cold_Start(void) {
     cout << BOLD_GREEN << "IRCSERV" << RESET_COLOR << ": Server cold start..." << endl; // Cold start :p
     struct sockaddr_in6 addr;
     struct vector<pollfd> poll_struct;
     string                all_data;
 
     this->_listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
-    if (this->_listen_fd < 0) throw runtime_error("Can't open the socket"); // Si _listen_fd est < 0 cela veut dire que socket fait mal son taff ce fou.
+    if (this->_listen_fd < 0)
+        throw runtime_error("Can't open the socket"); // Si _listen_fd est < 0 cela veut dire que socket fait mal son taff ce fou.
     cout << GREEN << "IRCSERV" << RESET_COLOR << ": Socket open..." << endl;
     
 	this->setNonBlocking(this->_listen_fd);
     
     int opt = 1;
-    if (setsockopt(this->_listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) throw std::runtime_error("Can't set option socket.");
+    if (setsockopt(this->_listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+        throw std::runtime_error("Can't set option socket.");
     cout << GREEN << "IRCSERV" << RESET_COLOR << ": Socket options set..." << endl;
 
 	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
@@ -59,8 +64,7 @@ void    Server::Cold_Start(void)
 	addr.sin6_port = htons(this->_port);
     cout << GREEN << "IRCSERV" << RESET_COLOR << ": IPV6 addr set..." << endl;
 
-    if (bind(this->_listen_fd, (const struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
+    if (bind(this->_listen_fd, (const struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("Bind failed");
         close(this->_listen_fd);
         throw std::runtime_error("Can't bind socket.");
@@ -75,8 +79,7 @@ void    Server::Cold_Start(void)
         ;
 }
 
-void Server::setNonBlocking(int sock)
-{
+void Server::setNonBlocking(int sock) {
 	int flags = fcntl(sock, F_GETFL, 0);
 	if (flags < 0) {
 		throw std::runtime_error("Can't get flags for socket.");

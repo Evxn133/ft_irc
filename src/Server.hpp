@@ -16,12 +16,18 @@
 using namespace std;
 
 class Server {
+
     public:
+
         Server(int port, string password);
         ~Server();
+
         void    Cold_Start(void);
         void    setNonBlocking(int sock);
+
+    
     private:
+
         int _listen_fd;
         int _port;
         string  _password;
