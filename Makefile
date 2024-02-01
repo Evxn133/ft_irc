@@ -21,7 +21,7 @@ $(NAME): $(OBJS) $(HEADERS) Makefile
 	@$(CC) -o $(NAME) $(OBJS) $(FLAGS)
 
 clean:
-	@rm -f *.o
+	@rm -f src/*.o
 
 fclean: clean
 	@rm -f $(NAME)
