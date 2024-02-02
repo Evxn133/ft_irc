@@ -1,6 +1,6 @@
-SRCS = src/main.cpp src/Server.cpp
+SRCS = src/main.cpp src/Server.cpp src/User.cpp
 
-HEADERS = #server.hpp user.hpp
+HEADERS = #server.hpp #user.hpp
 
 OBJS =	${SRCS:.cpp=.o}
 

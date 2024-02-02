@@ -1,0 +1,6 @@
+<< CAP LS
+<< NICK evan
+<< USER evan evan localhost :evan
+>> 001 evan :IRCSERV: Welcome to the IRCSERV Network Evan(nick)!
+<< MODE evan +i
+<< PING localhost

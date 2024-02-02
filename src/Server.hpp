@@ -12,8 +12,13 @@
 #include <algorithm>
 #include <sstream>
 #include <iterator>
+#include <cstdlib>
+
+#include "User.hpp"
 
 using namespace std;
+
+class User;
 
 class Server {
 
@@ -24,12 +29,14 @@ class Server {
 
         void    Cold_Start(void);
         void    setNonBlocking(int sock);
-
+        void    Welcome_Message(int client_socket);
+        void    handle_input(int client_socket);
+        void    command_not_found(int client_socket, string command);
     
     private:
-
-        int _listen_fd;
-        int _port;
+        vector<User> _users;
+        int     _listen_fd;
+        int     _port;
         string  _password;
 };
 
