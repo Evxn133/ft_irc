@@ -28,6 +28,7 @@ Server::Server(int port, string password) : _port(port), _password(password) {
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Password = ";
     for (int i = 0; i < password.size(); i++) cout << "*";
     cout << "." << endl;
+    _nb_clients = 0;
 }
 
 // destructor
@@ -83,79 +84,123 @@ void    Server::Cold_Start(void) {
 
     poll_struct.push_back(listen_fd_struct);
 
-	while (1) {
+        std::unordered_map<int, User> users; // Map pour associer les sockets aux utilisateurs
+    while (1) {
         int pl = poll(poll_struct.data(), poll_struct.size(), -1);
-
         if (pl < 0) throw runtime_error("Can't read socket activity");
 
         for (int i = 0; i < poll_struct.size(); i++) {
             if (poll_struct[i].revents & POLLIN) {
-                int new_socket = accept(this->_listen_fd, NULL, NULL);
-                if (new_socket < 0)
-                    continue ;
-                else {
-                    cout << GREEN << "IRCSERV" << RESET_COLOR << ": New client on fd " << new_socket << endl;
+                if (poll_struct[i].fd == this->_listen_fd) {
+                    // Accepter une nouvelle connexion
+                    int new_socket = accept(this->_listen_fd, NULL, NULL);
+                    if (new_socket < 0) {
+                        cerr << "Erreur lors de l'acceptation de la nouvelle connexion." << endl;
+                        continue;
+                    }
+                    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Nouveau client sur fd " << new_socket << endl;
                     struct pollfd new_client;
                     new_client.fd = new_socket;
                     new_client.events = POLLIN;
                     new_client.revents = 0;
                     poll_struct.push_back(new_client);
-                    // envoyer un rpl de bienvenue
-
-                    Welcome_Message(new_client.fd);
-                    while (1)
-                        handle_input(new_client.fd);
+                    users[new_socket] = User(); // Ajouter un nouvel utilisateur
+                    Welcome_Message(new_socket); // Envoyer un message de bienvenue
+                } else {
+                    // Gérer l'entrée d'un client existant
+                    handle_input(poll_struct[i].fd, users);
                 }
             }
         }
     }
 }
 
-void    Server::handle_input(int client_socket) {
-    char    buf[1024];
-    string  ClientMsg;
-
-    int     bytesReceived = recv(client_socket, buf, 1024, 0);
+void Server::handle_input(int client_socket, std::unordered_map<int, User>& users) {
+    char buf[1024];
+    int bytesReceived = recv(client_socket, buf, 1024, 0);
     if (bytesReceived <= 0) {
-        std::cerr << "Erreur de réception ou connexion fermée par le client." << std::endl;
+        // ... (gestion de la déconnexion et des erreurs)
         return;
     }
 
-    ClientMsg.assign(buf, bytesReceived); // conversion en string
-    // Découpage du message en mots
+    string ClientMsg(buf, bytesReceived);
     istringstream iss(ClientMsg);
-    vector<string> tokens{istream_iterator<string>{iss},
-                        istream_iterator<string>{}};
-    // gestion commandes
+    vector<string> tokens{istream_iterator<string>{iss}, istream_iterator<string>{}};
+
     if (!tokens.empty()) {
         const string& command = tokens[0];
         string input = tokens.size() > 1 ? tokens[1] : ""; // Assurez-vous qu'il y a un deuxième token avant d'y accéder
-        if (command == "NICK") {
-            auto it = std::find_if(_users.begin(), _users.end(), [client_socket](User& user) {
-                return user.get_client_fd() == client_socket;
-            });
 
-            if (it != _users.end()) {
+        if (command == "NICK") {
+            auto it = users.find(client_socket);
+            if (it != users.end()) {
                 // Si l'utilisateur est trouvé, mettez à jour son surnom
-                it->set_nickname(input);
+                it->second.set_nickname(input);
             } else {
                 // Sinon, créez un nouvel utilisateur
                 User newUser;
                 newUser.set_client_fd(client_socket);
                 newUser.set_nickname(input);
-                _users.push_back(newUser);
-                cout << _users[client_socket].get_nickname() << endl;
+                users[client_socket] = newUser;
             }
+            cout << GREEN << "IRCSERV" << RESET_COLOR << ": The client with the fd " << client_socket << " has the nickname " << MAGENTA << users[client_socket].get_nickname() << RESET_COLOR << endl;
         }
         else if (command == "USER") {
-            ;
+            if (tokens.size() < 5) {
+                // Pas assez de paramètres
+                // Envoyer un message d'erreur au client
+                std::string errMsg = "ERROR :USER command requires more parameters\r\n";
+                send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+                return;
+            }
+            // Extraction des informations
+            string username = tokens[1];
+            string hostname = tokens[2];
+            string servername = tokens[3];
+            string realname = tokens[4]; // realname peut contenir des espaces, donc vous devrez peut-être le traiter différemment
+            auto it = users.find(client_socket);
+            if (it != users.end()) {
+                // Si l'utilisateur est trouvé, mettez à jour ses informations
+                it->second.set_username(username);
+                it->second.set_hostname(hostname);
+                it->second.set_servername(servername);
+                it->second.set_realname(realname);
+            } else {
+                // Sinon, créez un nouvel utilisateur (ou gérez l'erreur si l'utilisateur doit déjà exister à ce stade)
+                User newUser;
+                newUser.set_client_fd(client_socket);
+                newUser.set_username(username);
+                newUser.set_hostname(hostname);
+                newUser.set_servername(servername);
+                newUser.set_realname(realname);
+                users[client_socket] = newUser;
+            }
+        }
+        else if (command == "PING") {
+            string PongMsg = "PONG " + input + "\r\n";
+            if (send(client_socket, PongMsg.c_str(), PongMsg.size(), 0) <= 0) {
+                cerr << "Error message de bienvenue" << endl;
+                return ;
+            }
         }
         else if (command == "QUIT") {
-            ;    
+            // Message d'adieu :(
+            std::string farewellMsg = "Goodbye!\r\n";
+            send(client_socket, farewellMsg.c_str(), farewellMsg.length(), 0);
+            // Fermer le socket
+            close(client_socket);
+            // Supprimer l'utilisateur de la map
+            users.erase(client_socket);
+        
+            // Afficher un message dans le serveur ou effectuer d'autres actions de nettoyage
+            cout << "Le client " << client_socket << " s'est déconnecté avec QUIT." << endl;
+        
+            // Si vous avez un système de notification pour les autres utilisateurs ou des canaux, gérez-le ici
+            // ...
         }
     }
-}
 
+}
 
 // void    Server::command_not_found(int client_socket, string command) {
 //     string notFoundMsg = "421 evan :The command  :" + command + " does not exist \r\n";

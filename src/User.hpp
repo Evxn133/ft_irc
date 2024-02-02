@@ -28,10 +28,18 @@ class User {
         string    get_nickname(void);
         int    get_client_fd(void);
         friend ostream& operator<<(ostream& os, const User& user);
+        void    set_username(string username_received);
+        void    set_hostname(string hostname_received);
+        void    set_realname(string realname_received);
+        void    set_servername(string servername_received);
     private:
+        int     _client_fd;
         string  _nick;
         string  _user;
-        int     _client_fd;
+        string  _username;
+        string  _hostname;
+        string  _realname;
+        string  _server_name;
 };
 
 #endif

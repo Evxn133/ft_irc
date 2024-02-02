@@ -4,3 +4,18 @@
 >> 001 evan :IRCSERV: Welcome to the IRCSERV Network Evan(nick)!
 << MODE evan +i
 << PING localhost
+>> PONG localhost
+--> lag pong
+<< PING localhost
+>> PONG localhost
+--> lag pong
+<< PING localhost
+>> PONG localhost
+--> lag pong
+<< PRIVMSG localhost :PING 1706891923 466776
+<< PING localhost
+>> PONG localhost
+--> lag pong
+<< PING localhost
+>> PONG localhost
+--> lag pong

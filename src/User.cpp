@@ -31,3 +31,19 @@ ostream& operator<<(std::ostream& os, const User& user) {
     os << "User: " << user._nick; // Afficher le surnom de l'utilisateur ou toute autre information pertinente
     return os;
 }
+
+void    User::set_username(string username_received) {
+    this->_username = username_received;
+}
+
+void    User::set_hostname(string hostname_received) {
+    this->_hostname = hostname_received;
+}
+
+void    User::set_realname(string realname_received) {
+    this->_realname = realname_received;
+}
+
+void    User::set_servername(string servername_received) {
+    this->_server_name = servername_received;
+}
