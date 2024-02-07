@@ -1,21 +1,30 @@
 << CAP LS
-<< NICK evan
+<< PASS coucou
+<< NICK evaan
 << USER evan evan localhost :evan
->> 001 evan :IRCSERV: Welcome to the IRCSERV Network Evan(nick)!
-<< MODE evan +i
-<< PING localhost
->> PONG localhost
---> lag pong
-<< PING localhost
->> PONG localhost
---> lag pong
-<< PING localhost
->> PONG localhost
---> lag pong
-<< PRIVMSG localhost :PING 1706891923 466776
-<< PING localhost
->> PONG localhost
---> lag pong
-<< PING localhost
->> PONG localhost
---> lag pong
+>> :localhost CAP * LS :multi-prefix sasl
+<< CAP REQ :multi-prefix
+>> :localhost Password match
+<< CAP LS
+<< PASS coucou
+<< NICK evaan
+<< USER evan evan localhost :evan
+>> :localhost CAP * LS :multi-prefix sasl
+<< CAP REQ :multi-prefix
+>> :localhost Password match
+<< CAP LS
+<< PASS coucou
+<< NICK evaan
+<< USER evan evan localhost :evan
+>> :localhost CAP * LS :multi-prefix sasl
+<< CAP REQ :multi-prefix
+>> :localhost Password match
+<< CAP LS
+<< PASS coucou
+<< NICK evaan
+<< USER evan evan localhost :evan
+>> :localhost CAP * LS :multi-prefix sasl
+<< CAP REQ :multi-prefix
+>> :localhost 001  Registration done!
+<< MODE Registration +i
+<< WHOIS evaan

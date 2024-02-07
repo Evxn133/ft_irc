@@ -1,4 +1,4 @@
-SRCS = src/main.cpp src/Server.cpp src/User.cpp
+SRCS = src/main.cpp src/Server.cpp src/User.cpp src/Channel.cpp
 
 HEADERS = #server.hpp #user.hpp
 

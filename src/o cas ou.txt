@@ -1,0 +1,459 @@
+#include "Server.hpp"
+#include "Channel.hpp"
+
+#define RESET_COLOR "\033[0m"
+
+#define BLACK "\033[30m"                    /* Black */
+#define RED "\033[31m"                      /* Red */
+#define GREEN "\033[32m"                    /* Green */
+#define YELLOW "\033[33m"                   /* Yellow */
+#define BLUE "\033[34m"                     /* Blue */
+#define MAGENTA "\033[35m"                  /* Magenta */
+#define CYAN "\033[36m"                     /* Cyan */
+#define WHITE "\033[37m"                    /* White */
+#define BOLD_BLACK "\033[1m\033[30m"        /* Bold Black */
+#define BOLD_RED "\033[1m\033[31m"          /* Bold Red */
+#define BOLD_GREEN "\033[1m\033[32m"        /* Bold Green */
+#define BOLD_YELLOW "\033[1m\033[33m"       /* Bold Yellow */
+#define BOLD_BLUE "\033[1m\033[34m"         /* Bold Blue */
+#define BOLD_MAGENTA "\033[1m\033[35m"      /* Bold Magenta */
+#define BOLD_CYAN "\033[1m\033[36m"         /* Bold Cyan */
+#define BOLD_WHITE "\033[1m\033[37m"        /* Bold White */
+
+using namespace std;
+
+// constructor
+
+
+
+Server::Server(int port, string password) : _port(port), _password(password) {
+    cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Port = " << port << "." << endl;
+    cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Password = ";
+    for (int i = 0; i < password.size(); i++) cout << "*";
+    cout << "." << endl;
+    _nb_clients = 0;
+}
+
+// destructor
+
+Server::~Server() {
+
+}
+
+// other
+
+void    Server::Cold_Start(void) {
+    cout << BOLD_GREEN << "IRCSERV" << RESET_COLOR << ": Server cold start..." << endl; // Cold start :p
+    struct sockaddr_in6 addr;
+
+    this->_listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (this->_listen_fd < 0)
+        throw runtime_error("Can't open the socket"); // Si _listen_fd est < 0 cela veut dire que socket fait mal son taff ce fou.
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Socket open..." << endl;
+    
+	this->setNonBlocking(this->_listen_fd);
+    
+    int opt = 1;
+    if (setsockopt(this->_listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+        throw runtime_error("Can't set option socket.");
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Socket options set..." << endl;
+
+	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+	addr.sin6_family = AF_INET6;
+	addr.sin6_scope_id = 0;
+	addr.sin6_flowinfo = 0;
+	addr.sin6_addr = in6addr_any;
+	addr.sin6_port = htons(this->_port);
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": IPV6 addr set..." << endl;
+
+    if (bind(this->_listen_fd, (const struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("Bind failed");
+        close(this->_listen_fd);
+        throw runtime_error("Can't bind socket.");
+    }
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Socket bind success..." << endl;
+    
+    if ((listen(_listen_fd, 256)) < 0) throw runtime_error("Can't listen socket.");
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Listen socket success..." << endl;
+
+	cout << BOLD_CYAN << "Wait connection..." << RESET_COLOR << endl;
+
+
+    struct vector<pollfd>   poll_struct;
+    struct pollfd listen_fd_struct;
+    listen_fd_struct.fd = this->_listen_fd;
+    listen_fd_struct.events = POLLIN;
+    listen_fd_struct.revents = 0;
+
+    poll_struct.push_back(listen_fd_struct);
+
+    unordered_map<int, User> users; // Map pour associer les sockets aux utilisateurs
+    while (1) {
+        int pl = poll(poll_struct.data(), poll_struct.size(), -1);
+        if (pl < 0) throw runtime_error("Can't read socket activity");
+
+        for (int i = 0; i < poll_struct.size(); i++) {
+            if (poll_struct[i].revents & POLLIN) {
+                if (poll_struct[i].fd == this->_listen_fd) {
+                    // Accepter une nouvelle connexion
+                    int new_socket = accept(this->_listen_fd, NULL, NULL);
+                    if (new_socket < 0) {
+                        cerr << "Erreur lors de l'acceptation de la nouvelle connexion." << endl;
+                        continue;
+                    }
+                    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Nouveau client sur fd " << new_socket << endl;
+                    struct pollfd new_client;
+                    new_client.fd = new_socket;
+                    new_client.events = POLLIN;
+                    new_client.revents = 0;
+                    poll_struct.push_back(new_client);
+                    users[new_socket] = User(); // Ajouter un nouvel utilisateur
+                    string nick = users[new_socket].get_nickname(); // Obtenir le pseudo du nouvel utilisateur
+                } else {
+                    // Gérer l'entrée d'un client existant
+                    handle_input(poll_struct[i].fd, users);
+                }
+            }
+        }
+    }
+}
+
+void Server::handle_input(int client_socket, unordered_map<int, User>& users) {
+    static bool minimal_reg = false;
+    char buf[1024];
+    int bytesReceived = recv(client_socket, buf, 1024, 0);
+    if (bytesReceived <= 0) {
+        // ... (gestion de la déconnexion et des erreurs)
+        // cerr << "Error on socket " << client_socket << ": " << strerror(errno) << endl;
+        return;
+    }
+    string ClientMsg(buf, bytesReceived);
+    istringstream iss(ClientMsg);
+    vector<string> tokens{istream_iterator<string>{iss}, istream_iterator<string>{}};
+    if (!tokens.empty()) {
+        const string& command = tokens[0];
+        command_handler(command, client_socket, tokens, users);
+    }
+
+        if (command == "NICK" && minimal_reg == true) {
+            auto it = users.find(client_socket);
+            if (it != users.end()) {
+                // Si l'utilisateur est trouvé, mettez à jour son surnom
+                string oldNick = it->second.get_nickname(); // Obtenez l'ancien pseudo
+                it->second.set_nickname(input); // Mettez à jour avec le nouveau pseudo
+
+                // Construisez le message de changement de pseudo
+                string nickChangeMsg = ":oldNick!user@host NICK :" + input + "\r\n";
+                send(client_socket, nickChangeMsg.c_str(), nickChangeMsg.size(), 0);
+            } else {
+                // Sinon, créez un nouvel utilisateur
+                User newUser;
+                newUser.set_client_fd(client_socket);
+                newUser.set_nickname(input);
+                users[client_socket] = newUser;
+            }
+            cout << GREEN << "IRCSERV" << RESET_COLOR << ": The client with the fd " << client_socket << " has the nickname " << MAGENTA << users[client_socket].get_nickname() << RESET_COLOR << endl;
+        }
+        else if (command == "USER") {
+            if (tokens.size() < 5) {
+                string errMsg = "ERROR :USER command requires more parameters\r\n";
+                send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+                return;
+            }
+            string username = tokens[1];
+            string hostname = tokens[2];
+            string servername = tokens[3];
+            string realname = tokens[4]; // realname peut contenir des espaces, donc vous devrez peut-être le traiter différemment
+            auto it = users.find(client_socket);
+            if (it != users.end()) {
+                // Si l'utilisateur est trouvé, mettez à jour ses informations
+                it->second.set_username(username);
+                it->second.set_hostname(hostname);
+                it->second.set_servername(servername);
+                it->second.set_realname(realname);
+            } else {
+                // Sinon, créez un nouvel utilisateur (ou gérez l'erreur si l'utilisateur doit déjà exister à ce stade)
+                User newUser;
+                newUser.set_client_fd(client_socket);
+                newUser.set_username(username);
+                newUser.set_hostname(hostname);
+                newUser.set_servername(servername);
+                newUser.set_realname(realname);
+                users[client_socket] = newUser;
+            }
+            minimal_reg = true;
+
+            // Appeler la fonction registration_done pour envoyer le message de confirmation
+            registration_done(client_socket, users[client_socket].get_nickname());
+        }
+        else if (command == "PING" && minimal_reg == true) {
+            string PongMsg = "PONG " + input + "\r\n";
+            if (send(client_socket, PongMsg.c_str(), PongMsg.size(), 0) <= 0) {
+                cerr << "Error message de bienvenue" << endl;
+                return ;
+            }
+        }
+        else if (command == "QUIT") {
+            // Message d'adieu :(
+            string farewellMsg = "Goodbye!\r\n";
+            send(client_socket, farewellMsg.c_str(), farewellMsg.length(), 0);
+            // Fermer le socket
+            close(client_socket);
+            // Supprimer l'utilisateur de la map
+            users.erase(client_socket);
+        
+            // Afficher un message dans le serveur ou effectuer d'autres actions de nettoyage
+            cout << "Le client " << client_socket << " s'est déconnecté avec QUIT." << endl;
+        
+            // Si vous avez un système de notification pour les autres utilisateurs ou des canaux, gérez-le ici
+            // ...
+        }
+        if (command == "JOIN" && minimal_reg == true) {
+            if (tokens.size() != 2) {
+                string errMsg = "ERROR :JOIN command requires more parameters\r\n";
+                send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+                return;
+            }
+            string channelName = tokens[1];
+
+            auto itChannel = channels.find(channelName);
+            if (itChannel == channels.end()) {
+                // Si le canal n'existe pas, créez-le
+                Channel newChannel(channelName);
+                newChannel.addMember(client_socket);
+                // Utilisez emplace pour éviter la nécessité d'un constructeur par défaut
+                channels.emplace(channelName, newChannel);
+                itChannel = channels.find(channelName);
+            } else {
+                // Si le canal existe, ajoutez l'utilisateur à la liste des membres
+                itChannel->second.addMember(client_socket);
+            }
+    
+            // Envoyez un message à l'utilisateur pour confirmer qu'il a rejoint le canal
+            string joinMsg = "You have joined channel " + channelName + "\r\n";
+            send(client_socket, joinMsg.c_str(), joinMsg.length(), 0);
+    
+            // Informez les autres membres du canal qu'un nouvel utilisateur a rejoint
+            string userJoinedMsg = users[client_socket].get_nickname() + " has joined " + channelName + "\r\n";
+            itChannel->second.broadcastMessage(userJoinedMsg, client_socket);
+        }    
+        // ... (autres parties du code)
+        else if (command == "WHOIS" && minimal_reg == true) {
+            if (tokens.size() < 2) {
+                string errMsg = "ERROR :WHOIS command requires more parameters\r\n";
+                send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+                return;
+            }
+
+            string targetNickname = tokens[1];
+            bool userFound = false;
+            for (const auto& pair : users) {
+                const User& user = pair.second;
+                if (user.get_nickname() == targetNickname) {
+                    userFound = true;
+                    // Utilisateur trouvé, envoyer les informations
+                    string userInfo = ":server 311 " + user.get_nickname() + " " + user.get_username() + " " + user.get_hostname() + " * :" + user.get_realname() + "\r\n";
+                    send(client_socket, userInfo.c_str(), userInfo.length(), 0);
+
+                    // Ici, ajoutez d'autres informations si nécessaire, par exemple les canaux sur lesquels l'utilisateur est présent
+                    // ...
+
+                    // Message de fin de WHOIS
+                    string endOfWhois = ":server 318 " + user.get_nickname() + " :End of WHOIS list.\r\n";
+                    send(client_socket, endOfWhois.c_str(), endOfWhois.length(), 0);
+                    break; // Sortir de la boucle après avoir trouvé l'utilisateur
+                }
+            }
+
+            if (!userFound) {
+                // Utilisateur non trouvé, envoyer un message d'erreur
+                string errMsg = ":server 401 " + targetNickname + " :No such nick/channel\r\n";
+                send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+            }
+        }   
+
+    }
+
+void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+    if (command == "NICK" && minimal_reg == true) { //fait
+        handle_nick(client_socket, tokens[1], users);
+    }
+    else if (command == "USER") {
+        handle_user(client_socket, tokens, users);
+    }
+    else if (command == "PING" && minimal_reg == true) {
+        handle_ping(client_socket, tokens[1]);
+    }
+    else if (command == "QUIT") {
+        handle_quit(client_socket, users);
+    }
+    else if (command == "JOIN" && minimal_reg == true) {
+        handle_join(client_socket, tokens[1], users);
+    }
+    else if (command == "WHOIS" && minimal_reg == true) {
+        handle_whois(client_socket, tokens[1], users);
+    }
+    // ... Ajoutez d'autres commandes si nécessaire
+    else {
+        // Gérez les commandes non reconnues ou envoyez un message d'erreur au client
+        // handle_unknown_command(client_socket, command);
+    }
+}
+
+void Server::handle_nick(int client_socket, const string& input, unordered_map<int, User>& users) {
+    auto it = users.find(client_socket);
+    if (it != users.end()) {
+        // Si l'utilisateur est trouvé, mettez à jour son surnom
+        string oldNick = it->second.get_nickname(); // Obtenez l'ancien pseudo
+        it->second.set_nickname(input); // Mettez à jour avec le nouveau pseud
+        // Construisez le message de changement de pseudo
+        string nickChangeMsg = ":oldNick!user@host NICK :" + input + "\r\n";
+        send(client_socket, nickChangeMsg.c_str(), nickChangeMsg.size(), 0);
+    } else {
+        // Sinon, créez un nouvel utilisateur
+        User newUser;
+        newUser.set_client_fd(client_socket);
+        newUser.set_nickname(input);
+        users[client_socket] = newUser;
+    }
+    cout << GREEN << "IRCSERV" << RESET_COLOR << ": The client with the fd " << client_socket << " has the nickname " << MAGENTA << users[client_socket].get_nickname() << RESET_COLOR << endl;
+}
+
+void handle_user(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+    if (tokens.size() < 5) {
+        string errMsg = "ERROR :USER command requires more parameters\r\n";
+        send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+        return;
+    }
+    string username = tokens[1];
+    string hostname = tokens[2];
+    string servername = tokens[3];
+    string realname = tokens[4]; // realname peut contenir des espaces, donc vous devrez peut-être le traiter différemment
+    auto it = users.find(client_socket);
+    if (it != users.end()) {
+        // Si l'utilisateur est trouvé, mettez à jour ses informations
+        it->second.set_username(username);
+        it->second.set_hostname(hostname);
+        it->second.set_servername(servername);
+        it->second.set_realname(realname);
+    } else {
+        // Sinon, créez un nouvel utilisateur (ou gérez l'erreur si l'utilisateur doit déjà exister à ce stade)
+        User newUser;
+        newUser.set_client_fd(client_socket);
+        newUser.set_username(username);
+        newUser.set_hostname(hostname);
+        newUser.set_servername(servername);
+        newUser.set_realname(realname);
+        users[client_socket] = newUser;
+    }
+    minimal_reg = true
+    // Appeler la fonction registration_done pour envoyer le message de confirmation
+    registration_done(client_socket, users[client_socket].get_nickname());
+}
+
+void handle_ping(int client_socket, const string& input) {
+    string PongMsg = "PONG " + input + "\r\n";
+    if (send(client_socket, PongMsg.c_str(), PongMsg.size(), 0) <= 0) {
+        cerr << "Error message de bienvenue" << endl;
+        return ;
+    }
+}
+
+void handle_quit(int client_socket, unordered_map<int, User>& users) {
+    string farewellMsg = "Goodbye!\r\n";
+    send(client_socket, farewellMsg.c_str(), farewellMsg.length(), 0);
+    // Fermer le socket
+    close(client_socket);
+    // Supprimer l'utilisateur de la map
+    users.erase(client_socket);
+
+    // Afficher un message dans le serveur ou effectuer d'autres actions de nettoyage
+    cout << "Le client " << client_socket << " s'est déconnecté avec QUIT." << endl;
+}
+
+void handle_whois(int client_socket, const string& input, unordered_map<int, User>& users) {
+    if (tokens.size() < 2) {
+        string errMsg = "ERROR :WHOIS command requires more parameters\r\n";
+        send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+        return;
+    }
+    string targetNickname = tokens[1];
+    bool userFound = false;
+    for (const auto& pair : users) {
+        const User& user = pair.second;
+        if (user.get_nickname() == targetNickname) {
+            userFound = true;
+            // Utilisateur trouvé, envoyer les informations
+            string userInfo = ":server 311 " + user.get_nickname() + " " + user.get_username() + " " + user.get_hostname() + " * :" + user.get_realname() + "\r\n";
+            send(client_socket, userInfo.c_str(), userInfo.length(), 0);
+            // Ici, ajoutez d'autres informations si nécessaire, par exemple les canaux sur lesquels l'utilisateur est présent
+            // ...
+            // Message de fin de WHOIS
+            string endOfWhois = ":server 318 " + user.get_nickname() + " :End of WHOIS list.\r\n";
+            send(client_socket, endOfWhois.c_str(), endOfWhois.length(), 0);
+            break; // Sortir de la boucle après avoir trouvé l'utilisateur
+        }
+    }
+    if (!userFound) {
+        // Utilisateur non trouvé, envoyer un message d'erreur
+        string errMsg = ":server 401 " + targetNickname + " :No such nick/channel\r\n";
+        send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+    }
+}
+
+void handle_join(int client_socket, const string& input, unordered_map<int, User>& users) {
+    if (tokens.size() != 2) {
+        string errMsg = "ERROR :JOIN command requires more parameters\r\n";
+        send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+        return;
+    }
+    string channelName = tokens[1];
+    auto itChannel = channels.find(channelName);
+    if (itChannel == channels.end()) {
+        // Si le canal n'existe pas, créez-le
+        Channel newChannel(channelName);
+        newChannel.addMember(client_socket);
+        // Utilisez emplace pour éviter la nécessité d'un constructeur par défaut
+        channels.emplace(channelName, newChannel);
+        itChannel = channels.find(channelName);
+    } else {
+        // Si le canal existe, ajoutez l'utilisateur à la liste des membres
+        itChannel->second.addMember(client_socket);
+    }
+    // Envoyez un message à l'utilisateur pour confirmer qu'il a rejoint le canal
+    string joinMsg = "You have joined channel " + channelName + "\r\n";
+    send(client_socket, joinMsg.c_str(), joinMsg.length(), 0);
+    // Informez les autres membres du canal qu'un nouvel utilisateur a rejoint
+    string userJoinedMsg = users[client_socket].get_nickname() + " has joined " + channelName + "\r\n";
+    itChannel->second.broadcastMessage(userJoinedMsg, client_socket);
+        
+}
+
+// void    Server::command_not_found(int client_socket, string command) {
+//     string notFoundMsg = "421 evan :The command  :" + command + " does not exist \r\n";
+    
+//     if (send(client_socket, notFoundMsg.c_str(), notFoundMsg.size(), 0) <= 0) {
+//         cerr << "Error message de unknowncomamnd (421)" << endl;
+//         return ;
+//     }
+// }
+ 
+void Server::registration_done(int client_socket, const string& nick) {
+    string regDoneMsg = ":localhost 001 " + nick + " Registration done!\r\n";
+    if (send(client_socket, regDoneMsg.c_str(), regDoneMsg.size(), 0) <= 0) {
+        cerr << "Error sending registration done message" << endl;
+    } else {
+        cout << GREEN << "IRCSERV" << RESET_COLOR << ": Registration done for " << nick << endl;
+    }
+}
+
+
+void Server::setNonBlocking(int sock) {
+	int flags = fcntl(sock, F_GETFL, 0);
+	if (flags < 0) {
+		throw runtime_error("Can't get flags for socket.");
+	}
+	if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+		throw runtime_error("Can't set socket to non-blocking.");
+	}
+}

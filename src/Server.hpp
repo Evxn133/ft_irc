@@ -13,8 +13,10 @@
 #include <sstream>
 #include <iterator>
 #include <cstdlib>
+#include <unordered_map>
 
 #include "User.hpp"
+#include "Channel.hpp"
 
 using namespace std;
 
@@ -29,10 +31,25 @@ class Server {
 
         void    Cold_Start(void);
         void    setNonBlocking(int sock);
-        void    Welcome_Message(int client_socket);
-        void handle_input(int client_socket, unordered_map<int, User>& users);
+        void    Welcome_Message(int client_socket, const string& nick);
+        void    handle_input(int client_socket, unordered_map<int, User>& users);
+        void    command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         void    command_not_found(int client_socket, string command);
-    
+        void    registration_done(int client_socket, const string& nick);
+        void    handle_nick(int client_socket, const string& input, unordered_map<int, User>& users);
+        void    handle_user(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_ping(int client_socket, const string& input);
+        void    handle_cap_end(int client_socket, unordered_map<int, User>& users);
+        void    handle_cap_ls(int client_socket, unordered_map<int, User>& users);
+        void    handle_cap_req(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_pass(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_quit(int client_socket, unordered_map<int, User>& users);
+        void    handle_whois(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_join(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        bool    nickReceived = false;
+        bool    userReceived = false;
+        bool    passReceived = false;
+        // void    handle_unknown_command(int client_socket, const string& command);
     private:
         vector<User> _users;
         int     _listen_fd;
@@ -40,6 +57,9 @@ class Server {
         int     _nb_clients;
         bool    _bool_cmd;
         string  _password;
+        bool    _password_match;
+        bool    _minimal_reg;
+        unordered_map<string, Channel> channels;
 };
 
 #endif
