@@ -14,6 +14,7 @@
 #include <iterator>
 #include <cstdlib>
 #include <unordered_map>
+#include <memory>
 
 #include "User.hpp"
 #include "Channel.hpp"
@@ -21,6 +22,7 @@
 using namespace std;
 
 class User;
+/*class Channel;*/
 
 class Server {
 
@@ -29,6 +31,7 @@ class Server {
         Server(int port, string password);
         ~Server();
 
+        // std::unordered_map<std::string, std::unique_ptr<Channel>> channels;
         void    Cold_Start(void);
         void    setNonBlocking(int sock);
         void    Welcome_Message(int client_socket, const string& nick);
@@ -46,6 +49,7 @@ class Server {
         void    handle_quit(int client_socket, unordered_map<int, User>& users);
         void    handle_whois(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         void    handle_join(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        // void    handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         bool    nickReceived = false;
         bool    userReceived = false;
         bool    passReceived = false;
@@ -59,7 +63,7 @@ class Server {
         string  _password;
         bool    _password_match;
         bool    _minimal_reg;
-        unordered_map<string, Channel> channels;
+        /*unordered_map<string, Channel> channels;*/
 };
 
 #endif

@@ -40,6 +40,7 @@ class User {
         string    get_nickname(void) const;
         bool passReceived = false;
         bool userReceived = false;
+        bool nickReceived = false;
     private:
         int     _client_fd;
         string  _nick;

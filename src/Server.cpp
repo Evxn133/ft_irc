@@ -103,7 +103,6 @@ void    Server::Cold_Start(void) {
                         cerr << "Erreur lors de l'acceptation de la nouvelle connexion." << endl;
                         continue;
                     }
-                    cout << GREEN << "IRCSERV" << RESET_COLOR << ": Nouveau client sur fd " << new_socket << endl;
                     struct pollfd new_client;
                     new_client.fd = new_socket;
                     new_client.events = POLLIN;
@@ -121,28 +120,44 @@ void    Server::Cold_Start(void) {
 
 void Server::handle_input(int client_socket, unordered_map<int, User>& users) {
     char buf[1024];
-    int bytesReceived = recv(client_socket, buf, 1024, 0);
+    memset(buf, 0, sizeof(buf)); // Assurez-vous que le buffer est vide
+    int bytesReceived = recv(client_socket, buf, sizeof(buf), 0);
     if (bytesReceived <= 0) {
         // Gestion de la déconnexion ou des erreurs
+        close(client_socket);
         return;
     }
+
+    // Log des données brutes reçues
+
     string clientMsg(buf, bytesReceived);
     istringstream iss(clientMsg);
-    vector<string> tokens{istream_iterator<string>{iss}, istream_iterator<string>{}};
-    if (!tokens.empty()) {
-        const string& command = tokens[0];
-        command_handler(command, client_socket, tokens, users);
+    string command;
+
+    while (getline(iss, command)) {
+        vector<string> tokens;
+        istringstream cmdStream(command);
+        string token;
+        while (cmdStream >> token) {
+            tokens.push_back(token);
+        }
+        if (!tokens.empty()) {
+            command_handler(tokens[0], client_socket, tokens, users);
+        }
     }
 }
 
 void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
     if (command == "PASS") {
         handle_pass(client_socket, tokens, users);
-    } else if (command == "NICK") {
+    }
+    else if (command == "NICK") {
         handle_nick(client_socket, tokens[1], users);
-    } else if (command == "USER") {
+    }
+    else if (command == "USER") {
         handle_user(client_socket, tokens, users);
-    } else if (command == "CAP" && tokens.size() >= 2) {
+    }
+    else if (command == "CAP" && tokens.size() >= 2) {
         if (tokens[1] == "REQ") {
             // handle_cap_req(client_socket, tokens, users);
         } else if (tokens[1] == "LS") {
@@ -150,13 +165,61 @@ void Server::command_handler(const string& command, int client_socket, const vec
         } else if (tokens[1] == "END") {
             // handle_cap_end(client_socket, users);
         }
-    } else if (command == "PING") {
+    }
+    else if (command == "PING") {
         handle_ping(client_socket, tokens[1]);
-    } else if (command == "QUIT") {
+    }
+    /*else if (command == "PRIVMSG")
+        handle_privmsg(client_socket, tokens, users);*/
+    else if (command == "QUIT") {
         handle_quit(client_socket, users);
     }
     // Ajoutez d'autres commandes ici
 }
+
+/* void Server::handle_privmsg(int client_socket, const vector<string>& tokens, std::unordered_map<int, User>& users) {
+    if (tokens.size() < 3) {
+        // Gérer l'erreur: pas assez de tokens.
+        return;
+    }
+
+    string recipient = tokens[1];
+    // Supposons que messageContent concatène tous les tokens après le premier pour le message complet.
+    string messageContent;
+    for (size_t i = 2; i < tokens.size(); ++i) {
+        messageContent += (i == 2 ? "" : " ") + tokens[i];
+    }
+
+    std::unordered_map<int, User>::iterator senderIt = users.find(client_socket);
+    if (senderIt == users.end()) {
+        // Gérer l'erreur: expéditeur non trouvé.
+        return;
+    }
+    string senderName = senderIt->second.get_nickname();
+
+    // Envoyez le message. Ici, vous devez décider si recipient est un utilisateur ou un canal.
+    std::unordered_map<std::string, Channel>::iterator channelIt = channels.find(recipient);
+    if (channelIt != channels.end()) {
+        // Si recipient est un canal
+        channelIt->second.broadcastMessage(messageContent, senderName, users);
+    } else {
+        // Gérer le cas où le destinataire est un utilisateur ou n'existe pas.
+        // Ceci est une simplification. Une implémentation complète devrait chercher parmi les utilisateurs.
+    }
+}*/
+
+/* void Channel::broadcastMessage(const std::string& message, const std::string& senderName, std::unordered_map<int, User>& users) {
+    std::unordered_set<int>::iterator it;
+    for (it = members.begin(); it != members.end(); ++it) {
+        int member = *it;
+        std::unordered_map<int, User>::iterator userIt = users.find(member);
+        if (userIt != users.end()) {
+            string fullMessage = ":" + senderName + " PRIVMSG " + this->name + " :" + message + "\r\n";
+            send(userIt->first, fullMessage.c_str(), fullMessage.length(), 0);
+        }
+    }
+} */
+
 
 void Server::handle_cap_ls(int client_socket, unordered_map<int, User>& users) {
     string capResponse = ":localhost CAP * LS :multi-prefix sasl\r\n";
@@ -206,30 +269,32 @@ void Server::handle_pass(int client_socket, const vector<string>& tokens, unorde
 
 void Server::handle_nick(int client_socket, const string& newNick, unordered_map<int, User>& users) {
     auto it = users.find(client_socket);
-    if (it != users.end() && !it->second.get_nickname().empty()) { // l'erreur vient d'ici
-        // Création d'un nouvel utilisateur si non trouvé
+    if (!it->second.userReceived == true) {
+        // Si l'utilisateur n'existe pas, créez un nouvel utilisateur avec le surnom
         User newUser;
         newUser.set_nickname(newNick);
         users[client_socket] = newUser;
-    } else {
-        // Mise à jour du pseudo pour un utilisateur existant
+        it->second.nickReceived = true;
+    }
+    else if (it->second.userReceived == true) {
+        // Si l'utilisateur existe déjà, mettez à jour son surnom
         string oldNick = it->second.get_nickname();
         it->second.set_nickname(newNick);
 
-        // Format correct :nick!user@host NICK newnick
+        // Construisez et envoyez le message de changement de surnom correctement formaté
         string nickChangeMsg = ":" + oldNick + "!" + it->second.get_username() + "@" + it->second.get_hostname() + " NICK :" + newNick + "\r\n";
         send(client_socket, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
-
-        // Envoyer ce message à tous les utilisateurs concernés, pas seulement à l'utilisateur qui change de pseudo
-        // Cette étape dépend de la logique de votre application pour déterminer qui doit être informé.
+        it->second.nickReceived = true;
     }
 }
+
 void Server::handle_user(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
-    if (tokens.size() < 5) {
+    if (tokens.size() != 5) {
         string errMsg = ":localhost 461 * USER :Not enough parameters\r\n";
         send(client_socket, errMsg.c_str(), errMsg.length(), 0);
         return;
     }
+
     auto it = users.find(client_socket);
     if (it != users.end()) {
         it->second.set_username(tokens[1]);
@@ -238,16 +303,10 @@ void Server::handle_user(int client_socket, const vector<string>& tokens, unorde
         it->second.set_realname(tokens[4]);
         it->second.userReceived = true;
 
-        // Envoyez le message de bienvenue ou de confirmation de l'enregistrement ici
-        cout << "coucou" << endl;
-        if (it->second.passReceived) {
-            string welcomeMsg = ":localhost 001 : " + it->second.get_nickname() + "\r\n";
+        if (it->second.nickReceived && it->second.userReceived) {
+            string welcomeMsg = ":localhost 001 " + it->second.get_nickname() + " :Welcome to the (best) FT_IRC network, " + it->second.get_nickname() + "\r\n";
             send(client_socket, welcomeMsg.c_str(), welcomeMsg.length(), 0);
-        }
-        else {
-            string ErrorMsgUser = ":localhost Registration failed, give the correct password, if you wan´t to register \r\n";
-            send(client_socket, ErrorMsgUser.c_str(), ErrorMsgUser.length(), 0);
-            close(client_socket);
+            cout << BOLD_GREEN << "IRCSERV" << RESET_COLOR << ": L'utilisateur avec le nick \"" << it->second.get_nickname() << "\" est maintenant connécté sur le serveur !" << endl;
         }
     }
 }
@@ -258,9 +317,10 @@ void Server::handle_ping(int client_socket, const string& input) {
 }
 
 void Server::handle_quit(int client_socket, unordered_map<int, User>& users) {
+    auto it = users.find(client_socket);
     string goodbyeMsg = ":localhost QUIT :Client has quit\r\n";
     send(client_socket, goodbyeMsg.c_str(), goodbyeMsg.length(), 0);
-
+    cout << BOLD_YELLOW << "IRCSERV" << RESET_COLOR << ": L'utilisateur avec le nick \"" << it->second.get_nickname() << "\" est maintenant deconnécté du serveur !" << endl;
     // Fermez la connexion socket
     close(client_socket);
 
@@ -276,15 +336,6 @@ void Server::handle_quit(int client_socket, unordered_map<int, User>& users) {
 //         return ;
 //     }
 // }
- 
-void Server::registration_done(int client_socket, const string& nick) {
-    string regDoneMsg = ":localhost 001 " + nick + " Registration done!\r\n";
-    if (send(client_socket, regDoneMsg.c_str(), regDoneMsg.size(), 0) <= 0) {
-        cerr << "Error sending registration done message" << endl;
-    } else {
-        cout << GREEN << "IRCSERV" << RESET_COLOR << ": Registration done for " << nick << endl;
-    }
-}
 
 
 void Server::setNonBlocking(int sock) {

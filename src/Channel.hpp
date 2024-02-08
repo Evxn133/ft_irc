@@ -4,6 +4,8 @@
 #include <iostream>
 #include <unordered_set>
 #include <string>
+#include "Server.hpp"
+#include "User.hpp"
 
 using namespace std;
 
@@ -14,8 +16,8 @@ class Channel {
         void addMember(int clientSocket);
         void removeMember(int clientSocket);
         bool isMember(int clientSocket) const;
-        void broadcastMessage(const std::string& message, int senderSocket);
         const std::string& getName() const;
+        // void broadcastMessage(const std::string& message, const std::string& senderName, unordered_map<int, User>& users);
     
     private:
         string name;

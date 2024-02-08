@@ -1,4 +1,33 @@
+evan1 : 
+
 << CAP LS
 << PASS coucou
-<< NICK evan
-<< USER evscheid evscheid localhost :Evan Scheid
+<< NICK evan1
+<< USER codespace codespace localhost :Unknown
+>> :localhost 001 evan1 :Welcome to the (best) FT_IRC network, evan1
+<< MODE evan1 +i
+<< PING localhost
+>> PONG localhost
+--> lag pong
+<< PRIVMSG evan2 :coucou
+<< PING localhost
+>> PONG localhost
+--> lag pong
+
+evan2 :
+
+<< CAP LS
+<< PASS coucou
+<< NICK evan2
+<< USER codespace codespace localhost :Unknown
+>> :localhost 001 evan2 :Welcome to the (best) FT_IRC network, evan2
+<< MODE evan2 +i
+<< PING localhost
+>> PONG localhost
+--> lag pong
+>> :YourNickname PRIVMSG evan2 ::coucou
+<< PING localhost
+>> PONG localhost
+--> lag pong
+
+
