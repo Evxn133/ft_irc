@@ -1,6 +1,6 @@
 FT_IRC - Votre Serveur IRC en C++
 
-![image](https://github.com/Evxn133/ft_irc/assets/144713484/93926460-9bae-44df-967c-79c279504304)
+![giphy](https://github.com/Evxn133/ft_irc/assets/144713484/236e35e5-49d0-4459-8a29-583c052124a6)
 
 Bienvenue sur le dépôt GitHub de FT_IRC, un serveur IRC implémenté en C++ offrant une expérience de chat classique avec une touche moderne. Ce projet vise à recréer les fonctionnalités fondamentales d'un serveur IRC tout en introduisant des améliorations et des fonctionnalités supplémentaires pour enrichir l'expérience utilisateur.
 Fonctionnalités
