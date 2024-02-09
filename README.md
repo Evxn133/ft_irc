@@ -1,7 +1,5 @@
 FT_IRC - Votre Serveur IRC en C++
 
-
-
 Bienvenue sur le dépôt GitHub de FT_IRC, un serveur IRC implémenté en C++ offrant une expérience de chat classique avec une touche moderne. Ce projet vise à recréer les fonctionnalités fondamentales d'un serveur IRC tout en introduisant des améliorations et des fonctionnalités supplémentaires pour enrichir l'expérience utilisateur.
 Fonctionnalités
 
@@ -46,3 +44,15 @@ Utilisation
 Connectez-vous au serveur IRC en utilisant votre client IRC favori (par exemple, Irssi, WeeChat, ou mIRC) en spécifiant l'adresse IP (ou le nom d'hôte) et le port sur lequel le serveur s'exécute.
 Contribution
 
+Les contributions sont les bienvenues ! Si vous souhaitez contribuer, veuillez forker le dépôt, créer une branche pour votre fonctionnalité, et soumettre une pull request.
+Licence
+
+Distribué sous la licence MIT. Voir LICENSE pour plus d'informations.
+Auteurs
+
+    Votre Nom - Développement initial - VotreUsername
+
+Remerciements
+
+    Merci à tous ceux qui ont contribué au projet !
+    Spécial remerciement à Rizon pour l'inspiration.
