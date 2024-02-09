@@ -49,6 +49,9 @@ class Server {
         void    handle_quit(int client_socket, unordered_map<int, User>& users);
         void    handle_whois(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         void    handle_join(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    sendMOTD(int client_socket, unordered_map<int, User>& users);
+        void    sendNotice(int client_socket, const std::string& message);
+        void    sendMOTDLine(int client_socket, const std::string& message, const string& Nickname);
         // void    handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         bool    nickReceived = false;
         bool    userReceived = false;

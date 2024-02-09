@@ -268,6 +268,13 @@ void Server::handle_pass(int client_socket, const vector<string>& tokens, unorde
 }
 
 void Server::handle_nick(int client_socket, const string& newNick, unordered_map<int, User>& users) {
+    for (const auto& user : users) {
+        if (user.second.get_nickname() == newNick && user.first != client_socket) {
+            string errMsg = ":localhost 433 * " + newNick + " :Nickname is already in use...\r\n";
+            send(client_socket, errMsg.c_str(), errMsg.length(), 0);
+            return;
+        }
+    }
     auto it = users.find(client_socket);
     if (!it->second.userReceived == true) {
         // Si l'utilisateur n'existe pas, créez un nouvel utilisateur avec le surnom
@@ -285,6 +292,12 @@ void Server::handle_nick(int client_socket, const string& newNick, unordered_map
         string nickChangeMsg = ":" + oldNick + "!" + it->second.get_username() + "@" + it->second.get_hostname() + " NICK :" + newNick + "\r\n";
         send(client_socket, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
         it->second.nickReceived = true;
+        string nickChangeMsgOthers = "The client " + oldNick + ", changed his name to " + newNick + "\r\n";
+        for (auto& user : users) {
+            if (user.first != client_socket) { // Ne pas renvoyer au même utilisateur
+                send(user.first, nickChangeMsgOthers.c_str(), nickChangeMsgOthers.length(), 0);
+            }
+        }
     }
 }
 
@@ -307,9 +320,47 @@ void Server::handle_user(int client_socket, const vector<string>& tokens, unorde
             string welcomeMsg = ":localhost 001 " + it->second.get_nickname() + " :Welcome to the (best) FT_IRC network, " + it->second.get_nickname() + "\r\n";
             send(client_socket, welcomeMsg.c_str(), welcomeMsg.length(), 0);
             cout << BOLD_GREEN << "IRCSERV" << RESET_COLOR << ": L'utilisateur avec le nick \"" << it->second.get_nickname() << "\" est maintenant connécté sur le serveur !" << endl;
+            sendMOTD(client_socket, users);
         }
     }
 }
+
+void Server::sendMOTD(int client_socket, unordered_map<int, User>& users) {
+    // Messages initiaux
+    sendNotice(client_socket, "*** Looking up your hostname...");
+    sendNotice(client_socket, "*** Checking Ident");
+    sendNotice(client_socket, "*** Couldn't look up your hostname");
+    sendNotice(client_socket, "*** No Ident response");
+
+    // Début du MOTD
+    auto it = users.find(client_socket);
+    string StartMOTDMsg = ":FT_IRC 375 " + it->second.get_nickname() + " :- FT_IRC Message of the Day - \r\n";
+    send(client_socket, StartMOTDMsg.c_str(), StartMOTDMsg.length(), 0);
+
+    // Corps du MOTD, envoyez autant de lignes 372 que nécessaire
+    sendMOTDLine(client_socket, "- Welcome to Evan and Renaud FT_IRC Network", it->second.get_nickname());
+    sendMOTDLine(client_socket, "   - Rules:", it->second.get_nickname());
+    sendMOTDLine(client_socket, "       o No spamming or flooding", it->second.get_nickname());
+    sendMOTDLine(client_socket, "       o No clones or malicious bots", it->second.get_nickname());
+    sendMOTDLine(client_socket, "       o No explicits or non-legal contains", it->second.get_nickname());
+    sendMOTDLine(client_socket, "- Now that you're warned, feel free to join your first channel. Enjoy ​😎​!", it->second.get_nickname());
+    // Ajoutez plus de règles ou d'informations ici
+
+    // Fin du MOTD
+    string EndMOTDMsg = ":FT_IRC 376 " + it->second.get_nickname() + " :End of /MOTD command.\r\n";
+    send(client_socket, EndMOTDMsg.c_str(), EndMOTDMsg.length(), 0);
+}
+
+void Server::sendNotice(int client_socket, const string& message) {
+    string notice = ":FT_IRC NOTICE * :" + message + "\r\n";
+    send(client_socket, notice.c_str(), notice.length(), 0);
+}
+
+void Server::sendMOTDLine(int client_socket, const string& message, const string& Nickname) {
+    string motdLine = ":FT_IRC 372 " + Nickname + " :" + message + "\r\n";
+    send(client_socket, motdLine.c_str(), motdLine.length(), 0);
+}
+
 
 void Server::handle_ping(int client_socket, const string& input) {
     string pongResponse = "PONG " + input + "\r\n";

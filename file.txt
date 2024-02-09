@@ -1,33 +1,71 @@
-evan1 : 
-
 << CAP LS
-<< PASS coucou
-<< NICK evan1
-<< USER codespace codespace localhost :Unknown
->> :localhost 001 evan1 :Welcome to the (best) FT_IRC network, evan1
-<< MODE evan1 +i
-<< PING localhost
->> PONG localhost
+<< NICK codespace
+<< USER codespace codespace irc.rizon.net :Unknown
+>> :irc.uworld.se NOTICE * :*** Looking up your hostname...
+>> :irc.uworld.se NOTICE * :*** Checking Ident
+>> :irc.uworld.se NOTICE * :*** Couldn't look up your hostname
+>> :irc.uworld.se NOTICE * :*** No Ident response
+>> :irc.uworld.se CAP * LS :away-notify chghost invite-notify multi-prefix sasl userhost-in-names
+<< CAP REQ :multi-prefix
+>> :irc.uworld.se CAP codespace ACK :multi-prefix
+<< CAP END
+>> PING :269159934
+<< PONG :269159934
+>> :irc.uworld.se NOTICE codespace :*** Connected securely via TLSv1.3 TLS_AES_256_GCM_SHA384-256
+>> :irc.uworld.se NOTICE codespace :*** Your host is masked (FBCD61DE.CDB13B1C.6C6C642E.IP)
+>> :irc.uworld.se 001 codespace :Welcome to the Rizon Internet Relay Chat Network codespace
+<< MODE codespace +i
+>> :irc.uworld.se 002 codespace :Your host is irc.uworld.se, running version plexus-4(hybrid-8.1.20)
+>> :irc.uworld.se 003 codespace :This server was created Jun 27 2022 at 15:27:35
+>> :irc.uworld.se 004 codespace irc.uworld.se plexus-4(hybrid-8.1.20) CDGNRSUWagilopqrswxyz BCIMNORSabcehiklmnopqstvz Iabehkloqv
+>> :irc.uworld.se 005 codespace CALLERID CASEMAPPING=rfc1459 DEAF=D KICKLEN=180 MODES=4 PREFIX=(qaohv)~&@%+ STATUSMSG=~&@%+ EXCEPTS=e INVEX=I NICKLEN=30 NETWORK=Rizon MAXLIST=beI:250 MAXTARGETS=4 :are supported by this server
+>> :irc.uworld.se 005 codespace CHANTYPES=# CHANLIMIT=#:250 CHANNELLEN=50 TOPICLEN=390 CHANMODES=beI,k,l,BCMNORScimnpstz AWAYLEN=180 KNOCK ELIST=CMNTU SAFELIST NAMESX UHNAMES WATCH=60 :are supported by this server
+>> :irc.uworld.se 251 codespace :There are 23 users and 8786 invisible on 17 servers
+>> :irc.uworld.se 252 codespace 46 :IRC Operators online
+>> :irc.uworld.se 253 codespace 32 :unknown connection(s)
+>> :irc.uworld.se 254 codespace 7963 :channels formed
+>> :irc.uworld.se 255 codespace :I have 8809 clients and 17 servers
+>> :irc.uworld.se 265 codespace :Current local users: 8809  Max: 10409
+>> :irc.uworld.se 266 codespace :Current global users: 8809  Max: 10409
+>> :irc.uworld.se 375 codespace :- irc.uworld.se Message of the Day - 
+>> :irc.uworld.se 372 codespace :-          11oo                            
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- 88d888b. dP d888888b .d8888b. 88d888b. 
+>> :irc.uworld.se 372 codespace :- 88'  `88 88    .d8P' 88'  `88 88'  `88 
+>> :irc.uworld.se 372 codespace :- 1188       88  .Y8P    88.  .88 88    88 
+>> :irc.uworld.se 372 codespace :- 11dP       dP d888888P `88888P' dP    dP
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- Rizon Chat Network -- http://rizon.net
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- Listening on ports: 6660 - 6669, 7000. SSL: 6697, 9999
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- Rules:
+>> :irc.uworld.se 372 codespace :- o No spamming or flooding
+>> :irc.uworld.se 372 codespace :- o No clones or malicious bots
+>> :irc.uworld.se 372 codespace :- o No takeovers
+>> :irc.uworld.se 372 codespace :- o No distribution of child pornography
+>> :irc.uworld.se 372 codespace :- o Clients must respond to VERSION requests
+>> :irc.uworld.se 372 codespace :- o Rizon staff may disconnect clients for any or no reason
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- First steps:
+>> :irc.uworld.se 372 codespace :- o To register your nick: /msg NickServ HELP
+>> :irc.uworld.se 372 codespace :- o To register your channel: /msg ChanServ HELP
+>> :irc.uworld.se 372 codespace :- o To get a vHost: /msg HostServ HELP REQUEST
+>> :irc.uworld.se 372 codespace :- o For other help with Rizon: /join #help
+>> :irc.uworld.se 372 codespace :- 
+>> :irc.uworld.se 372 codespace :- Usage of this network is a privilege, not a right. Rizon is a
+>> :irc.uworld.se 372 codespace :- transit provider, therefore no person or entity involved with
+>> :irc.uworld.se 372 codespace :- *.rizon.net or irc.uworld.se takes any responsibility for
+>> :irc.uworld.se 372 codespace :- users' actions. Absolutely no warranty is expressed or implied.
+>> :irc.uworld.se 376 codespace :End of /MOTD command.
+>> :codespace!~codespace@FBCD61DE.CDB13B1C.6C6C642E.IP MODE codespace :+Six
+>> :Global!service@rizon.net NOTICE codespace :[Logon News - Dec 16 2013] Own a large/active channel or plan to get one going? Please read http://s.rizon.net/authline
+>> :Global!service@rizon.net NOTICE codespace :[Logon News - Feb 16 2022] First time on Rizon? Be sure to check out our wiki! https://wiki.rizon.net
+>> :Global!service@rizon.net NOTICE codespace :[Random News - Mar 20 2009] Idle on Rizon a lot? Why not play our idlerpg game, you can check it out at #RizonIRPG for more information visit the website http://idlerpg.rizon.net -Rizon Staff
+>> :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG codespace :VERSION
+<< NOTICE py-ctcp :VERSION irssi v1.2.2-1ubuntu1.1
+<< NICK evan
+>> :codespace!~codespace@FBCD61DE.CDB13B1C.6C6C642E.IP NICK :evan
+<< PING irc.uworld.se
+>> :irc.uworld.se PONG irc.uworld.se :irc.uworld.se
 --> lag pong
-<< PRIVMSG evan2 :coucou
-<< PING localhost
->> PONG localhost
---> lag pong
-
-evan2 :
-
-<< CAP LS
-<< PASS coucou
-<< NICK evan2
-<< USER codespace codespace localhost :Unknown
->> :localhost 001 evan2 :Welcome to the (best) FT_IRC network, evan2
-<< MODE evan2 +i
-<< PING localhost
->> PONG localhost
---> lag pong
->> :YourNickname PRIVMSG evan2 ::coucou
-<< PING localhost
->> PONG localhost
---> lag pong
-
-
