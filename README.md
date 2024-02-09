@@ -11,8 +11,6 @@ Fonctionnalités
     Extension du protocole pour inclure des fonctionnalités modernes telles que la gestion des avatars.
     Architecture modulaire permettant une extension facile du serveur.
 
-![giphy](https://github.com/Evxn133/ft_irc/assets/144713484/236e35e5-49d0-4459-8a29-583c052124a6)
-
 Démarrage Rapide
 Prérequis
 
