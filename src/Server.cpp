@@ -90,6 +90,7 @@ void    Server::Cold_Start(void) {
     poll_struct.push_back(listen_fd_struct);
 
     unordered_map<int, User> users; // Map pour associer les sockets aux utilisateurs
+    unordered_map<int, Channel> channels;
     while (1) {
         int pl = poll(poll_struct.data(), poll_struct.size(), -1);
         if (pl < 0) throw runtime_error("Can't read socket activity");
@@ -111,14 +112,14 @@ void    Server::Cold_Start(void) {
                     users[new_socket] = User(); // Ajouter un nouvel utilisateur
                 } else {
                     // Gérer l'entrée d'un client existant
-                    handle_input(poll_struct[i].fd, users);
+                    handle_input(poll_struct[i].fd, users, channels);
                 }
             }
         }
     }
 }
 
-void Server::handle_input(int client_socket, unordered_map<int, User>& users) {
+void Server::handle_input(int client_socket, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
     char buf[1024];
     memset(buf, 0, sizeof(buf)); // Assurez-vous que le buffer est vide
     int bytesReceived = recv(client_socket, buf, sizeof(buf), 0);
@@ -142,12 +143,12 @@ void Server::handle_input(int client_socket, unordered_map<int, User>& users) {
             tokens.push_back(token);
         }
         if (!tokens.empty()) {
-            command_handler(tokens[0], client_socket, tokens, users);
+            command_handler(tokens[0], client_socket, tokens, users, chanels);
         }
     }
 }
 
-void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users, unordered_map<int, Channel> channels) {
     if (command == "PASS") {
         handle_pass(client_socket, tokens, users);
     }
@@ -169,57 +170,47 @@ void Server::command_handler(const string& command, int client_socket, const vec
     else if (command == "PING") {
         handle_ping(client_socket, tokens[1]);
     }
-    /*else if (command == "PRIVMSG")
-        handle_privmsg(client_socket, tokens, users);*/
+    // else if (command == "JOIN") {
+    //     handle_join(client_socket, tokens[1], users, channels);
+    // }
+    // else if (command == "PRIVMSG")
+    //     handle_privmsg(client_socket, tokens, users);
     else if (command == "QUIT") {
         handle_quit(client_socket, users);
     }
+    else if (command == "motd")
+        sendMOTD(client_socket, users);
+    
     // Ajoutez d'autres commandes ici
 }
 
-/* void Server::handle_privmsg(int client_socket, const vector<string>& tokens, std::unordered_map<int, User>& users) {
-    if (tokens.size() < 3) {
-        // Gérer l'erreur: pas assez de tokens.
-        return;
-    }
+// void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+//     auto it = users.find(client_socket);
+    
+//     if (it != users.end()) {
+//         if (tokens[0] == "#") {
+//             broadcast_channel(client_socket, tokens, users);
 
-    string recipient = tokens[1];
-    // Supposons que messageContent concatène tous les tokens après le premier pour le message complet.
-    string messageContent;
-    for (size_t i = 2; i < tokens.size(); ++i) {
-        messageContent += (i == 2 ? "" : " ") + tokens[i];
-    }
+//         }
+//     }
+// }
 
-    std::unordered_map<int, User>::iterator senderIt = users.find(client_socket);
-    if (senderIt == users.end()) {
-        // Gérer l'erreur: expéditeur non trouvé.
-        return;
-    }
-    string senderName = senderIt->second.get_nickname();
+// void    Server::handle_join(int client_socket, const string& input, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
 
-    // Envoyez le message. Ici, vous devez décider si recipient est un utilisateur ou un canal.
-    std::unordered_map<std::string, Channel>::iterator channelIt = channels.find(recipient);
-    if (channelIt != channels.end()) {
-        // Si recipient est un canal
-        channelIt->second.broadcastMessage(messageContent, senderName, users);
-    } else {
-        // Gérer le cas où le destinataire est un utilisateur ou n'existe pas.
-        // Ceci est une simplification. Une implémentation complète devrait chercher parmi les utilisateurs.
-    }
-}*/
+//     auto it = users.find(client_socket);
 
-/* void Channel::broadcastMessage(const std::string& message, const std::string& senderName, std::unordered_map<int, User>& users) {
-    std::unordered_set<int>::iterator it;
-    for (it = members.begin(); it != members.end(); ++it) {
-        int member = *it;
-        std::unordered_map<int, User>::iterator userIt = users.find(member);
-        if (userIt != users.end()) {
-            string fullMessage = ":" + senderName + " PRIVMSG " + this->name + " :" + message + "\r\n";
-            send(userIt->first, fullMessage.c_str(), fullMessage.length(), 0);
-        }
-    }
-} */
-
+//     if (it != users.end()) {
+//         ;
+//     }
+//     int i = 0;
+//     for (auto chanel : chanels) {
+//         if (chanel._fds == chanels._fds)
+//             cout << "le chanel existe deja" << endl;
+//         i++;
+//     }
+//     // auto chanel_create = chanels.find(input);
+//     cout << "nouveux chanel crée" << endl;
+// }
 
 void Server::handle_cap_ls(int client_socket, unordered_map<int, User>& users) {
     string capResponse = ":localhost CAP * LS :multi-prefix sasl\r\n";

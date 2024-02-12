@@ -35,8 +35,8 @@ class Server {
         void    Cold_Start(void);
         void    setNonBlocking(int sock);
         void    Welcome_Message(int client_socket, const string& nick);
-        void    handle_input(int client_socket, unordered_map<int, User>& users);
-        void    command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_input(int client_socket, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels);
+        void    command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users, unordered_map<int, Channel> channels);
         void    command_not_found(int client_socket, string command);
         void    registration_done(int client_socket, const string& nick);
         void    handle_nick(int client_socket, const string& input, unordered_map<int, User>& users);
@@ -48,11 +48,11 @@ class Server {
         void    handle_pass(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         void    handle_quit(int client_socket, unordered_map<int, User>& users);
         void    handle_whois(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
-        void    handle_join(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_join(int client_socket, const string& input, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels);
         void    sendMOTD(int client_socket, unordered_map<int, User>& users);
         void    sendNotice(int client_socket, const std::string& message, const string& Hostname);
         void    sendMOTDLine(int client_socket, const std::string& message, const string& Nickname,  const string& Hostname);
-        // void    handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
+        void    handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users);
         bool    nickReceived = false;
         bool    userReceived = false;
         bool    passReceived = false;

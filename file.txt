@@ -1,69 +1,22 @@
 << CAP LS
-<< NICK codespace
-<< USER codespace codespace irc.rizon.net :Unknown
->> :lithium.rizon.net NOTICE * :*** Looking up your hostname...
->> :lithium.rizon.net NOTICE * :*** Checking Ident
->> :lithium.rizon.net NOTICE * :*** Couldn't look up your hostname
->> :lithium.rizon.net NOTICE * :*** No Ident response
->> :lithium.rizon.net CAP * LS :away-notify chghost invite-notify multi-prefix sasl userhost-in-names
-<< CAP REQ :multi-prefix
->> :lithium.rizon.net CAP codespace ACK :multi-prefix
-<< CAP END
->> PING :2933875184
-<< PONG :2933875184
->> :lithium.rizon.net NOTICE codespace :*** Connected securely via TLSv1.3 TLS_AES_256_GCM_SHA384-256
->> :lithium.rizon.net NOTICE codespace :*** Your host is masked (FBCD61DE.CDB13B1C.6C6C642E.IP)
->> :lithium.rizon.net 001 codespace :Welcome to the Rizon Internet Relay Chat Network codespace
-<< MODE codespace +i
->> :lithium.rizon.net 002 codespace :Your host is lithium.rizon.net, running version plexus-4(hybrid-8.1.20)
->> :lithium.rizon.net 003 codespace :This server was created Jun 28 2022 at 12:46:54
->> :lithium.rizon.net 004 codespace lithium.rizon.net plexus-4(hybrid-8.1.20) CDGNRSUWagilopqrswxyz BCIMNORSabcehiklmnopqstvz Iabehkloqv
->> :lithium.rizon.net 005 codespace CALLERID CASEMAPPING=rfc1459 DEAF=D KICKLEN=180 MODES=4 PREFIX=(qaohv)~&@%+ STATUSMSG=~&@%+ EXCEPTS=e INVEX=I NICKLEN=30 NETWORK=Rizon MAXLIST=beI:250 MAXTARGETS=4 :are supported by this server
->> :lithium.rizon.net 005 codespace CHANTYPES=# CHANLIMIT=#:250 CHANNELLEN=50 TOPICLEN=390 CHANMODES=beI,k,l,BCMNORScimnpstz AWAYLEN=180 KNOCK WATCH=60 ELIST=CMNTU SAFELIST NAMESX UHNAMES :are supported by this server
->> :lithium.rizon.net 251 codespace :There are 23 users and 8792 invisible on 17 servers
->> :lithium.rizon.net 252 codespace 46 :IRC Operators online
->> :lithium.rizon.net 253 codespace 3 :unknown connection(s)
->> :lithium.rizon.net 254 codespace 7954 :channels formed
->> :lithium.rizon.net 255 codespace :I have 8815 clients and 17 servers
->> :lithium.rizon.net 265 codespace :Current local users: 8815  Max: 10409
->> :lithium.rizon.net 266 codespace :Current global users: 8815  Max: 10409
->> :lithium.rizon.net 375 codespace :- lithium.rizon.net Message of the Day - 
->> :lithium.rizon.net 372 codespace :-          11oo                            
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- 88d888b. dP d888888b .d8888b. 88d888b. 
->> :lithium.rizon.net 372 codespace :- 88'  `88 88    .d8P' 88'  `88 88'  `88 
->> :lithium.rizon.net 372 codespace :- 1188       88  .Y8P    88.  .88 88    88 
->> :lithium.rizon.net 372 codespace :- 11dP       dP d888888P `88888P' dP    dP
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- Rizon Chat Network -- http://rizon.net
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- Listening on ports: 6660 - 6669, 7000. SSL: 6697, 9999
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- Rules:
->> :lithium.rizon.net 372 codespace :- o No spamming or flooding
->> :lithium.rizon.net 372 codespace :- o No clones or malicious bots
->> :lithium.rizon.net 372 codespace :- o No takeovers
->> :lithium.rizon.net 372 codespace :- o No distribution of child pornography
->> :lithium.rizon.net 372 codespace :- o Clients must respond to VERSION requests
->> :lithium.rizon.net 372 codespace :- o Rizon staff may disconnect clients for any or no reason
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- First steps:
->> :lithium.rizon.net 372 codespace :- o To register your nick: /msg NickServ HELP
->> :lithium.rizon.net 372 codespace :- o To register your channel: /msg ChanServ HELP
->> :lithium.rizon.net 372 codespace :- o To get a vHost: /msg HostServ HELP REQUEST
->> :lithium.rizon.net 372 codespace :- o For other help with Rizon: /join #help
->> :lithium.rizon.net 372 codespace :- 
->> :lithium.rizon.net 372 codespace :- Usage of this network is a privilege, not a right. Rizon is a
->> :lithium.rizon.net 372 codespace :- transit provider, therefore no person or entity involved with
->> :lithium.rizon.net 372 codespace :- *.rizon.net or lithium.rizon.net takes any responsibility for
->> :lithium.rizon.net 372 codespace :- users' actions. Absolutely no warranty is expressed or implied.
->> :lithium.rizon.net 376 codespace :End of /MOTD command.
->> :codespace!~codespace@FBCD61DE.CDB13B1C.6C6C642E.IP MODE codespace :+Six
->> :Global!service@rizon.net NOTICE codespace :[Logon News - Dec 16 2013] Own a large/active channel or plan to get one going? Please read http://s.rizon.net/authline
->> :Global!service@rizon.net NOTICE codespace :[Logon News - Feb 16 2022] First time on Rizon? Be sure to check out our wiki! https://wiki.rizon.net
->> :Global!service@rizon.net NOTICE codespace :[Random News - Nov 29 2013] Want to make your vhost shiny by adding colors to it? Try your luck in #VIzon
->> :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG codespace :VERSION
-<< NOTICE py-ctcp :VERSION irssi v1.2.2-1ubuntu1.1
-<< PING lithium.rizon.net
->> :lithium.rizon.net PONG lithium.rizon.net :lithium.rizon.net
+<< PASS coucou
+<< NICK evan
+<< USER evan evan localhost :evan
+>> :localhost 001 evan :Welcome to the (best) FT_IRC network, evan
+<< MODE evan +i
+>> :evan 375 evan :- FT_IRC Message of the Day - 
+>> :evan 372 evan :- Welcome to Evan and Renaud FT_IRC Network
+>> :evan 372 evan :   Rules:
+>> :evan 372 evan :           o No spamming or flooding
+>> :evan 372 evan :           o No clones or malicious bots
+>> :evan 372 evan :           o No explicits or non-legal contains
+>> :evan 372 evan :- Now that you're warned, feel free to join your first channel. Enjoy ​😎​!
+>> :evan NOTICE * :*** Looking up your hostname...
+>> :evan NOTICE * :*** Checking Ident
+>> :evan NOTICE * :*** Couldn't look up your hostname
+>> :evan NOTICE * :*** No Ident response
+>> :evan 376 evan :End of /MOTD command.
+<< PING localhost
+>> PONG localhost
 --> lag pong
+<< JOIN #ev
