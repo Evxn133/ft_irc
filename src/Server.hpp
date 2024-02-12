@@ -22,7 +22,7 @@
 using namespace std;
 
 class User;
-/*class Channel;*/
+class Channel;
 
 class Server {
 

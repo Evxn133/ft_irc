@@ -17,7 +17,7 @@ class Channel {
         void    removeMember(int clientSocket);
         bool    isMember(int clientSocket) const;
         const   std::string& getName() const;
-        void    broadcastMessage(const std::string& message, int client_socket, const std::string& senderName, unordered_map<int, User>& users);
+        // void    broadcastMessage(const std::string& message, int client_socket, const std::string& senderName, unordered_map<int, User>& users);
     
     private:
         string name;

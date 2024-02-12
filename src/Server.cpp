@@ -170,11 +170,11 @@ void Server::command_handler(const string& command, int client_socket, const vec
     else if (command == "PING") {
         handle_ping(client_socket, tokens[1]);
     }
-    // else if (command == "JOIN") {
-    //     handle_join(client_socket, tokens[1], users, channels);
-    // }
-    // else if (command == "PRIVMSG")
-    //     handle_privmsg(client_socket, tokens, users);
+    else if (command == "JOIN") {
+        handle_join(client_socket, tokens[1], users, channels);
+    }
+    else if (command == "PRIVMSG")
+        handle_privmsg(client_socket, tokens, users);
     else if (command == "QUIT") {
         handle_quit(client_socket, users);
     }
@@ -184,33 +184,33 @@ void Server::command_handler(const string& command, int client_socket, const vec
     // Ajoutez d'autres commandes ici
 }
 
-// void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
-//     auto it = users.find(client_socket);
+void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+    auto it = users.find(client_socket);
     
-//     if (it != users.end()) {
-//         if (tokens[0] == "#") {
-//             broadcast_channel(client_socket, tokens, users);
+    if (it != users.end()) {
+        if (tokens[0] == "#") {
+            // broadcast_channel(client_socket, tokens, users);
 
-//         }
-//     }
-// }
+        }
+    }
+}
 
-// void    Server::handle_join(int client_socket, const string& input, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
+void    Server::handle_join(int client_socket, const string& input, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
 
-//     auto it = users.find(client_socket);
+    auto it = users.find(client_socket);
 
-//     if (it != users.end()) {
-//         ;
-//     }
-//     int i = 0;
-//     for (auto chanel : chanels) {
-//         if (chanel._fds == chanels._fds)
-//             cout << "le chanel existe deja" << endl;
-//         i++;
-//     }
-//     // auto chanel_create = chanels.find(input);
-//     cout << "nouveux chanel crée" << endl;
-// }
+    if (it != users.end()) {
+        ;
+    }
+    int i = 0;
+    for (auto chanel : chanels) {
+        // if (chanel._fds == chanels._fds)
+        //     cout << "le chanel existe deja" << endl;
+        i++;
+    }
+    // auto chanel_create = chanels.find(input);
+    cout << "nouveux chanel crée" << endl;
+}
 
 void Server::handle_cap_ls(int client_socket, unordered_map<int, User>& users) {
     string capResponse = ":localhost CAP * LS :multi-prefix sasl\r\n";
