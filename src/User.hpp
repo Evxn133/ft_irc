@@ -38,9 +38,9 @@ class User {
         string    get_realname(void) const;
         string    get_servername(void) const;
         string    get_nickname(void) const;
-        bool passReceived = false;
-        bool userReceived = false;
-        bool nickReceived = false;
+        bool passReceived;
+        bool userReceived;
+        bool nickReceived;
     private:
         int     _client_fd;
         string  _nick;

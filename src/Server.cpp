@@ -30,7 +30,7 @@ Server::Server(int port, string password) : _port(port), _password(password) {
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Port = " << port << "." << endl;
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": IP = localhost" << endl;
     cout << YELLOW << "IRCSERV" << RESET_COLOR << ": Password = ";
-    for (int i = 0; i < password.size(); i++) cout << "*";
+    for (size_t i = 0; i < password.size(); i++) cout << "*";
     cout << "." << endl;
     _nb_clients = 0;
     _password_match = false;
@@ -89,13 +89,13 @@ void    Server::Cold_Start(void) {
 
     poll_struct.push_back(listen_fd_struct);
 
-    unordered_map<int, User> users; // Map pour associer les sockets aux utilisateurs
-    unordered_map<int, Channel> channels;
+    map<int, User> users; // Map pour associer les sockets aux utilisateurs
+    map<int, Channel> channels;
     while (1) {
         int pl = poll(poll_struct.data(), poll_struct.size(), -1);
         if (pl < 0) throw runtime_error("Can't read socket activity");
 
-        for (int i = 0; i < poll_struct.size(); i++) {
+        for (size_t i = 0; i < poll_struct.size(); i++) {
             if (poll_struct[i].revents & POLLIN) {
                 if (poll_struct[i].fd == this->_listen_fd) {
                     // Accepter une nouvelle connexion
@@ -119,7 +119,7 @@ void    Server::Cold_Start(void) {
     }
 }
 
-void Server::handle_input(int client_socket, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
+void Server::handle_input(int client_socket, map<int, User>& users, map<int, Channel>& chanels) {
     char buf[1024];
     memset(buf, 0, sizeof(buf)); // Assurez-vous que le buffer est vide
     int bytesReceived = recv(client_socket, buf, sizeof(buf), 0);
@@ -148,7 +148,8 @@ void Server::handle_input(int client_socket, unordered_map<int, User>& users, un
     }
 }
 
-void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, unordered_map<int, User>& users, unordered_map<int, Channel> channels) {
+void Server::command_handler(const string& command, int client_socket, const vector<string>& tokens, map<int, User>& users, map<int, Channel> channels) {
+    (void) channels;
     if (command == "PASS") {
         handle_pass(client_socket, tokens, users);
     }
@@ -170,9 +171,9 @@ void Server::command_handler(const string& command, int client_socket, const vec
     else if (command == "PING") {
         handle_ping(client_socket, tokens[1]);
     }
-    else if (command == "JOIN") {
-        handle_join(client_socket, tokens[1], users, channels);
-    }
+    // else if (command == "JOIN") {
+    //     handle_join(client_socket, tokens[1], users, channels);
+    // }
     else if (command == "PRIVMSG")
         handle_privmsg(client_socket, tokens, users);
     else if (command == "QUIT") {
@@ -184,8 +185,8 @@ void Server::command_handler(const string& command, int client_socket, const vec
     // Ajoutez d'autres commandes ici
 }
 
-void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
-    auto it = users.find(client_socket);
+void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, map<int, User>& users) {
+    map<int, User>::iterator it = users.find(client_socket);
     
     if (it != users.end()) {
         if (tokens[0] == "#") {
@@ -195,30 +196,32 @@ void    Server::handle_privmsg(int client_socket, const vector<string>& tokens, 
     }
 }
 
-void    Server::handle_join(int client_socket, const string& input, unordered_map<int, User>& users, unordered_map<int, Channel>& chanels) {
+// void    Server::handle_join(int client_socket, const string& input, map<int, User>& users, map<int, Channel>& chanels) {
 
-    auto it = users.find(client_socket);
+//     // map<int, User>::iterator it = users.find(client_socket);
 
-    if (it != users.end()) {
-        ;
-    }
-    int i = 0;
-    for (auto chanel : chanels) {
-        // if (chanel._fds == chanels._fds)
-        //     cout << "le chanel existe deja" << endl;
-        i++;
-    }
-    // auto chanel_create = chanels.find(input);
-    cout << "nouveux chanel crée" << endl;
-}
+//     // if (it != users.end()) {
+//     //     ;
+//     // }
+//     // int i = 0;
+//     // for (map<int, Channel>::iterator it : chanels) {
+//     //     // if (chanel._fds == chanels._fds)
+//     //     //     cout << "le chanel existe deja" << endl;
+//     //     i++;
+//     // }
+//     // // auto chanel_create = chanels.find(input);
+//     // cout << "nouveux chanel crée" << endl;
+// }
 
-void Server::handle_cap_ls(int client_socket, unordered_map<int, User>& users) {
+void Server::handle_cap_ls(int client_socket, map<int, User>& users) {
+    (void) users;
     string capResponse = ":localhost CAP * LS :multi-prefix sasl\r\n";
     send(client_socket, capResponse.c_str(), capResponse.length(), 0);
 }
 
-void Server::handle_cap_req(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+void Server::handle_cap_req(int client_socket, const vector<string>& tokens, map<int, User>& users) {
     // Exemple pour gérer une requête de capacité
+    (void) users;
     string capability = tokens[2]; // Supposons que tokens[2] contient la capacité demandée
     if (capability == "multi-prefix") {
         string ackResponse = ":localhost CAP * ACK :multi-prefix\r\n";
@@ -229,12 +232,13 @@ void Server::handle_cap_req(int client_socket, const vector<string>& tokens, uno
     }
 }
 
-void Server::handle_cap_end(int client_socket, unordered_map<int, User>& users) {
-    // La logique pour terminer la négociation CAP, si nécessaire.
-}
+// void Server::handle_cap_end(int client_socket, map<int, User>& users) {
+//     // La logique pour terminer la négociation CAP, si nécessaire.
+
+// }
 
 
-void Server::handle_pass(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
+void Server::handle_pass(int client_socket, const vector<string>& tokens, map<int, User>& users) {
     // Supposons qu'un utilisateur n'a pas encore été ajouté à la map users ici
     if (tokens.size() < 2) {
         // Envoyer une réponse d'erreur si le mot de passe n'est pas fourni
@@ -245,7 +249,7 @@ void Server::handle_pass(int client_socket, const vector<string>& tokens, unorde
         return;
     }
     
-    auto it = users.find(client_socket);
+    map<int, User>::iterator it = users.find(client_socket);
     if (it != users.end()) {
         if (tokens[1] == _password) {
             it->second.passReceived = true;
@@ -258,48 +262,52 @@ void Server::handle_pass(int client_socket, const vector<string>& tokens, unorde
     }
 }
 
-void Server::handle_nick(int client_socket, const string& newNick, unordered_map<int, User>& users) {
-    for (const auto& user : users) {
-        if (user.second.get_nickname() == newNick && user.first != client_socket) {
+void Server::handle_nick(int client_socket, const string& newNick, map<int, User>& users) {
+    // Iterate through users using traditional iterator
+    map<int, User>::iterator it;
+    for (it = users.begin(); it != users.end(); ++it) {
+        if (it->second.get_nickname() == newNick && it->first != client_socket) {
             string errMsg = ":localhost 433 * " + newNick + " :Nickname is already in use...\r\n";
             send(client_socket, errMsg.c_str(), errMsg.length(), 0);
             return;
         }
     }
-    auto it = users.find(client_socket);
-    if (!it->second.userReceived == true) {
-        // Si l'utilisateur n'existe pas, créez un nouvel utilisateur avec le surnom
+
+    // Check user existence and update accordingly
+    it = users.find(client_socket);
+    if (it == users.end()) {
+        // If user doesn't exist, create new user with newNick
         User newUser;
         newUser.set_nickname(newNick);
         users[client_socket] = newUser;
-        it->second.nickReceived = true;
-    }
-    else if (it->second.userReceived == true) {
-        // Si l'utilisateur existe déjà, mettez à jour son surnom
+        it->second.userReceived = true; // Assume this flag becomes true upon creation
+    } else {
+        // If user exists, update nickname and send messages
         string oldNick = it->second.get_nickname();
         it->second.set_nickname(newNick);
 
-        // Construisez et envoyez le message de changement de surnom correctement formaté
         string nickChangeMsg = ":" + oldNick + "!" + it->second.get_username() + "@" + it->second.get_hostname() + " NICK :" + newNick + "\r\n";
         send(client_socket, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
-        it->second.nickReceived = true;
+        it->second.nickReceived = true; // Update flag
+
         string nickChangeMsgOthers = "The client " + oldNick + ", changed his name to " + newNick + "\r\n";
-        for (auto& user : users) {
-            if (user.first != client_socket) { // Ne pas renvoyer au même utilisateur
-                send(user.first, nickChangeMsgOthers.c_str(), nickChangeMsgOthers.length(), 0);
+        for (map<int, User>::iterator other_it = users.begin(); other_it != users.end(); ++other_it) {
+            if (other_it->first != client_socket) { // Don't send to self
+                send(other_it->first, nickChangeMsgOthers.c_str(), nickChangeMsgOthers.length(), 0);
             }
         }
     }
 }
 
-void Server::handle_user(int client_socket, const vector<string>& tokens, unordered_map<int, User>& users) {
-    if (tokens.size() != 5) {
+
+void Server::handle_user(int client_socket, const vector<string>& tokens, map<int, User>& users) {
+    if (tokens.size() < 5) {
         string errMsg = ":localhost 461 * USER :Not enough parameters\r\n";
         send(client_socket, errMsg.c_str(), errMsg.length(), 0);
         return;
     }
 
-    auto it = users.find(client_socket);
+    map<int, User>::iterator it = users.find(client_socket);
     if (it != users.end()) {
         it->second.set_username(tokens[1]);
         it->second.set_hostname(tokens[2]);
@@ -316,8 +324,8 @@ void Server::handle_user(int client_socket, const vector<string>& tokens, unorde
     }
 }
 
-void Server::sendMOTD(int client_socket, unordered_map<int, User>& users) {
-    auto it = users.find(client_socket);
+void Server::sendMOTD(int client_socket, map<int, User>& users) {
+    map<int, User>::iterator it = users.find(client_socket);
 
     // Début du MOTD
     string StartMOTDMsg = ":" + it->second.get_hostname() + " 375 " + it->second.get_nickname() + " :- FT_IRC Message of the Day - \r\n";
@@ -357,8 +365,8 @@ void Server::handle_ping(int client_socket, const string& input) {
     send(client_socket, pongResponse.c_str(), pongResponse.length(), 0);
 }
 
-void Server::handle_quit(int client_socket, unordered_map<int, User>& users) {
-    auto it = users.find(client_socket);
+void Server::handle_quit(int client_socket, map<int, User>& users) {
+    map<int, User>::iterator it = users.find(client_socket);
     string goodbyeMsg = ":localhost QUIT :Client has quit\r\n";
     send(client_socket, goodbyeMsg.c_str(), goodbyeMsg.length(), 0);
     cout << BOLD_YELLOW << "IRCSERV" << RESET_COLOR << ": L'utilisateur avec le nick \"" << it->second.get_nickname() << "\" est maintenant deconnécté du serveur !" << endl;

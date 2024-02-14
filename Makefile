@@ -7,7 +7,7 @@ OBJS =	${SRCS:.cpp=.o}
 NAME = ircserv
 
 CC = c++
-FLAGS = #-Wall -Wextra -Werror -std=c++98 -pedantic
+FLAGS = -Wall -Wextra -Werror -std=c++98 -pedantic
 
 .cpp.o:
 	@$(call print_progress)
